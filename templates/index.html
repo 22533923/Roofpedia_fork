@@ -1,0 +1,21 @@
+{%extends 'base.html'%}
+
+{%block head%}
+<h1 style="text-align: center">My app</h1>
+{%endblock%}
+
+{%block body%} 
+<form action="/running" method="POST" name = "runModel-form">
+    <div class="container" >
+        <div class="form-row justify-content-center">
+            <div class="input-group mb-3 w-50">
+                <span class="input-group-text" id="inputGroup-sizing-default">City</span>
+                <input name = "city" type="text" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+            </div>
+        </div>
+        <div class="form-row justify-content-center">
+            <button type="submit" class="btn btn-primary btn-lg">Run model</button>
+        </div>
+    </div>
+</form>
+{%endblock%}
