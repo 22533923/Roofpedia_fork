@@ -1,19 +1,18 @@
+from ast import Return
 import os
 import torch
 import toml
 import argparse
 import threading
+import geopandas
+import time
 
 from src.predict import predict
 from src.extract import intersection
-from flask import Flask, render_template, url_for, request, redirect
-
-# parser = argparse.ArgumentParser()
-# parser.add_argument("city", help="City to be predicted, must be the same as the name of the dataset")
-# parser.add_argument("type", help="Roof Typology, Green for Greenroof, Solar for PV Roof")
-# args = parser.parse_args()
+from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for
 
 class Predict_and_extract:
+    #Code to run Roofpedia model on sample data
 
     def pred_and_ext(self,city):
 
@@ -44,13 +43,27 @@ class Predict_and_extract:
         predict(tiles_dir, mask_dir, tile_size, device, chkpt)
 
         intersection(target_type, city_name, mask_dir)
+        return True
+
+#global identifier
+complete = False
+running = False
+#methods
 
 def run_model(city):
-    #run as backround task via threading
+    #start a thread to run the model as a background task
+    global running, complete
+    running = True
     print("Starting thread: ",threading.current_thread().name)
     new_class = Predict_and_extract()
     new_class.pred_and_ext(city)
-    print("Thread completed!")
+    complete = True
+
+def extract_features():
+    pass
+    #extract rooftop features identified by Roofpedia model
+
+
 
 app = Flask(__name__)
 
@@ -58,11 +71,25 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
+@app.route("/finished")
+def finished():
+    return render_template("finished.html")
+
+
 @app.route("/running",methods=['POST','GET'])
 def running():
     city = request.form['city']
-    threading.Thread(target=run_model,args=(city,)).start()
+    run_model_thread = threading.Thread(target=run_model,args=(city,)).start()
     return render_template("running.html")
+
+@app.route("/track", methods=["GET"])
+def track():
+    global complete # regrab the value of complete every iteration
+    print(complete)
+    if complete: # model has finished running, complete set to True
+        complete = False
+        return jsonify({'redirect': url_for('finished')})
+    return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 if __name__ == "__main__":
     app.run(debug=True)
