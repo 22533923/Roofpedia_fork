@@ -1,15 +1,18 @@
 from ast import Return
+from fileinput import filename
+from glob import glob
 import os
 import torch
 import toml
-import argparse
 import threading
-import geopandas
-import time
+import geopandas as gpd
+import geocoder
 
 from src.predict import predict
 from src.extract import intersection
 from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for
+from shapely.geometry import Point
+from geopy.geocoders import Nominatim
 
 class Predict_and_extract:
     #Code to run Roofpedia model on sample data
@@ -48,6 +51,8 @@ class Predict_and_extract:
 #global identifier
 complete = False
 running = False
+absolute_path = os.path.dirname(__file__)
+#mapbox_access_token = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA'
 #methods
 
 def run_model(city):
@@ -59,16 +64,30 @@ def run_model(city):
     new_class.pred_and_ext(city)
     complete = True
 
-def extract_features():
-    pass
+def extract_features(city,type):
     #extract rooftop features identified by Roofpedia model
+    global absolute_path
+    gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/SD_Solar.geojson'))
+    gdf['centroid'] = gdf.centroid
+    print(gdf.crs)
+    print(gdf.centroid[0])
+    c = list(gdf.centroid[0].coords)
+    print(c[0])
+    (lon,lat) = c[0]
+    c_string = str(lat) + ', ' + str(lon)
+    print(c_string)
+    geolocator = Nominatim(user_agent="my_app")
+    location = geolocator.reverse(c_string)
+    print(location.address)
 
 
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def home():
+    extract_features("SD","Solar")
     return render_template("index.html")
 
 @app.route("/finished")
