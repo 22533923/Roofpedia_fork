@@ -1,4 +1,6 @@
 from ast import Return
+from asyncio import current_task
+from audioop import add
 from fileinput import filename
 from glob import glob
 import os
@@ -52,33 +54,34 @@ class Predict_and_extract:
 complete = False
 running = False
 absolute_path = os.path.dirname(__file__)
+model_thread_name = ""
 #mapbox_access_token = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA'
 #methods
 
 def run_model(city):
     #start a thread to run the model as a background task
-    global running, complete
-    running = True
-    print("Starting thread: ",threading.current_thread().name)
+    global complete,model_thread_name
+    model_thread_name = threading.current_thread().name
+    print("Starting thread: ",model_thread_name)
     new_class = Predict_and_extract()
     new_class.pred_and_ext(city)
     complete = True
+    model_thread_name = ""
 
 def extract_features(city,type):
     #extract rooftop features identified by Roofpedia model
     global absolute_path
-    gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/SD_Solar.geojson'))
-    gdf['centroid'] = gdf.centroid
-    print(gdf.crs)
-    print(gdf.centroid[0])
-    c = list(gdf.centroid[0].coords)
-    print(c[0])
-    (lon,lat) = c[0]
-    c_string = str(lat) + ', ' + str(lon)
-    print(c_string)
     geolocator = Nominatim(user_agent="my_app")
-    location = geolocator.reverse(c_string)
-    print(location.address)
+    coords = []
+    addresses = []
+    gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+city+'_'+type+'.geojson'))#path to results
+    gdf['centroid'] = gdf.centroid
+    for i in range(gdf.shape[0]):
+        coords.append(list(gdf.centroid[i].coords))
+        (lon,lat) = coords[i][0]
+        c_string = str(lat) + ', ' + str(lon)
+        addresses.append(geolocator.reverse(c_string))
+    return coords, addresses
 
 
 
@@ -87,18 +90,22 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    extract_features("SD","Solar")
     return render_template("index.html")
 
 @app.route("/finished")
 def finished():
-    return render_template("finished.html")
+    coords,addresses = extract_features("SD","Solar")
+    return render_template("finished.html",addresses = addresses)
 
 
 @app.route("/running",methods=['POST','GET'])
 def running():
+    global running, model_thread_name
     city = request.form['city']
-    run_model_thread = threading.Thread(target=run_model,args=(city,)).start()
+    if not model_thread_name:
+        #string empty
+        model_thread = threading.Thread(target=run_model,args=(city,)).start()
+        running = True
     return render_template("running.html")
 
 @app.route("/track", methods=["GET"])
@@ -106,7 +113,7 @@ def track():
     global complete # regrab the value of complete every iteration
     print(complete)
     if complete: # model has finished running, complete set to True
-        complete = False
+        complete = True
         return jsonify({'redirect': url_for('finished')})
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 

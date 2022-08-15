@@ -1,6 +1,10 @@
 {%extends 'base.html'%}
 
 {%block head%}
+<!-- <style>
+    body { margin: 10%; padding: 10%; }
+    #map { position: relative; top: 0; bottom: 0; width: 50%; }
+    </style> -->
 <h1 style="text-align: center">My app</h1>
 {%endblock%}
 
@@ -18,4 +22,11 @@
         </div>
     </div>
 </form>
+
+<main>
+    <div id='map' style='width: 600px; height: 400px; margin: 25px auto;'></div>
+</main>
+
+<script src="{{url_for('static', filename='js/map.js')}}"></script>
+
 {%endblock%}

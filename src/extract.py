@@ -40,6 +40,7 @@ def intersection(target_type, city_name, mask_dir):
     intersections = intersections.drop_duplicates(subset=['geometry'])
     intersections.to_file('results/04Results/' + city_name + '_' + target_type + ".geojson", driver='GeoJSON')
     
+    
     print()
     print("Process complete, footprints with " + target_type + " roofs are saved at results/04Results/" + city_name + '_' + target_type + ".geojson")
     return intersections
