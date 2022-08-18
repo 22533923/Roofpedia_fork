@@ -4,12 +4,15 @@ from audioop import add
 from fileinput import filename
 from glob import glob
 import os
+from xml.etree.ElementTree import tostring
 import torch
 import toml
 import threading
 import geopandas as gpd
-import geocoder
+import overpass
+import osm2geojson
 
+from geojson import dump
 from src.predict import predict
 from src.extract import intersection
 from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for
@@ -68,6 +71,21 @@ def run_model(city):
     complete = True
     model_thread_name = ""
 
+
+def query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge):
+    global absolute_path,TESTQ
+    latSouthEdge = str(latSouthEdge)
+    lngWestEdge = str(lngWestEdge)
+    latNorthEdge = str(latNorthEdge)
+    lngEastEdge = str(lngEastEdge)
+    QUERY = '[out:json] [timeout:25];(node["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');way["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');relation["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+'););(._;>;);out body;'
+    api = overpass.API()
+    res = api.get(QUERY,build=False)
+    res_geojson = osm2geojson.json2geojson(res, filter_used_refs=False, log_level='INFO')
+    completePath = os.path.join(absolute_path, 'results/01City/')
+    with open(completePath+'TEST.geojson', 'w') as f:
+        dump(res_geojson, f)
+
 def extract_features(city,type):
     #extract rooftop features identified by Roofpedia model
     global absolute_path
@@ -92,9 +110,23 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
+@app.route("/test")
+def test():
+    return jsonify({'success': "success2!"}), 200
+
+@app.route("/validateSelection",methods=['POST','GET'])
+def check():
+    #TODO: check that co-ordinates have valid zoom level
+    latSouthEdge = request.form['south_edge_lat']
+    lngWestEdge = request.form['west_edge_lng']
+    latNorthEdge = request.form['north_edge_lat']
+    lngEastEdge = request.form['east_edge_lng']
+    query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge);
+    return {},200
+
 @app.route("/finished")
 def finished():
-    coords,addresses = extract_features("SD","Solar")
+    coords,addresses = extract_features("TEST","Solar")
     return render_template("finished.html",addresses = addresses)
 
 
@@ -107,6 +139,7 @@ def running():
         model_thread = threading.Thread(target=run_model,args=(city,)).start()
         running = True
     return render_template("running.html")
+
 
 @app.route("/track", methods=["GET"])
 def track():
