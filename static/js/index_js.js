@@ -1,15 +1,19 @@
 
 function getMapBounds(){
     const bounds = map.getBounds();
-    south_edge_lat = bounds.getSouthWest().lat
-    west_edge_lng = bounds.getSouthWest().lng
-    north_edge_lat = bounds.getNorthEast().lat
-    east_edge_lng = bounds.getNorthEast().lng
+    nw_coords = bounds.getNorthWest();
+    ne_coords = bounds.getNorthEast();
+    sw_coords = bounds.getSouthWest();
+    se_coords = bounds.getSouthEast();
     coords = {
-        'south_edge_lat': south_edge_lat,
-        'west_edge_lng': west_edge_lng,
-        'north_edge_lat': north_edge_lat,
-        'east_edge_lng': east_edge_lng,
+        'south_edge_lat': sw_coords.lat,
+        'west_edge_lng': sw_coords.lng,
+        'north_edge_lat': ne_coords.lat,
+        'east_edge_lng': ne_coords.lng,
+        'nw_coords': {'lat':nw_coords.lat, 'lng': nw_coords.lng},
+        'ne_coords': {'lat':ne_coords.lat, 'lng': ne_coords.lng},
+        'sw_coords': {'lat':sw_coords.lat, 'lng': sw_coords.lng},
+        'se_coords': {'lat':se_coords.lat, 'lng': se_coords.lng},
     };
     //postMapBounds(bounds);
     getRasterTiles(coords);
@@ -23,33 +27,6 @@ function applyBindings() {
 
 applyBindings()
 
-// function testReq(data){
-//     bound_box = String(data.south_edge_lat) + ',' + String(data.west_edge_lng) +
-//      ',' + String(data.north_edge_lat) + ',' + String(data.east_edge_lng)
-//     $.ajax({
-//         url:
-//             'https://www.overpass-api.de/api/interpreter?data=' + 
-//             '[out:json][timeout:60];' + 
-//             '(node["building"](' + bound_box + ');' +
-//             'way["building"](' +  bound_box + ');' +
-//             'relation["building"](' + bound_box + '););' +
-//             '(._;>;);out body;',
-//         dataType: 'json',
-//         type: 'GET',
-//         async: true,
-//         crossDomain: true,
-//         success: function(data){
-//             console.log(data);
-//         }
-//     }).done(function() {
-//         console.log( "second success" );
-//     }).fail(function(error) {
-//         console.log(error);
-//         console.log( "error" );
-//     }).always(function() {
-//         console.log( "complete" );
-//     });
-// }
 
 function postMapBounds(coords) { 
     $.ajax({
@@ -67,7 +44,9 @@ function postMapBounds(coords) {
     $.ajax({
         type: "POST",
         url: "/mapbox-raster-tiles",
-        data: coords,
+        data: JSON.stringify(coords),
+        dataType: "json",
+        contentType: "application/json",
         success: function(response){
             console.log("success from FE")
         }

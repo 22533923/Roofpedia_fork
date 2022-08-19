@@ -13,8 +13,8 @@ import geopandas as gpd
 import overpass
 import osm2geojson
 import requests
-import PIL  
 import io
+import math
 
 from geojson import dump
 from src.predict import predict
@@ -91,6 +91,7 @@ def query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge):
     with open(completePath+'TEST.geojson', 'w') as f:
         dump(res_geojson, f)
 
+
 def extract_features(city,type):
     #extract rooftop features identified by Roofpedia model
     global absolute_path
@@ -106,6 +107,41 @@ def extract_features(city,type):
         addresses.append(geolocator.reverse(c_string))
     return coords, addresses
 
+def deg2num(lat_deg, lon_deg, zoom):
+  lat_rad = math.radians(lat_deg)
+  n = 2.0 ** zoom
+  xtile = int((lon_deg + 180.0) / 360.0 * n)
+  ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
+  return (xtile, ytile)
+
+def numRowsCols(nw_coords,sw_coords,ne_coords):
+    #get number of rows in x,y,z raster grid of map bounds at zoom level 19
+    #number of rows
+    start_tile_x_r, start_tile_y_r = deg2num(nw_coords["lat"],nw_coords["lng"],19)
+    end_tile_x_r, end_tile_y_r = deg2num(sw_coords["lat"],sw_coords["lng"],19)
+    n_rows = abs(start_tile_y_r - end_tile_y_r)
+    #number of cols
+    start_tile_x_c, start_tile_y_c = deg2num(nw_coords["lat"],nw_coords["lng"],19)
+    end_tile_x_c, end_tile_y_c = deg2num(ne_coords["lat"],ne_coords["lng"],19)
+    n_cols = abs(start_tile_x_c - end_tile_x_c)
+    return n_rows,n_cols
+
+def startEndTilesXY(nw_coords,se_coords):
+    start_tile_x, start_tile_y = deg2num(nw_coords["lat"],nw_coords["lng"],19)
+    end_tile_x, end_tile_y = deg2num(se_coords["lat"],se_coords["lng"],19)
+    start_tile_xy = {
+        'x': start_tile_x,
+        'y': start_tile_y,
+    }
+    end_tile_xy = {
+        'x': end_tile_x,
+        'y': end_tile_y,
+    }
+    return start_tile_xy, end_tile_xy
+
+
+
+
 
 
 app = Flask(__name__)
@@ -117,19 +153,33 @@ def home():
 
 @app.route("/mapbox-raster-tiles",methods=['POST','GET'])
 def getTiles():
+    global absolute_path
+    request_data = request.get_json()
+    nw_coords = request_data['nw_coords']
+    ne_coords = request_data['ne_coords']
+    sw_coords = request_data['sw_coords']
+    se_coords = request_data['se_coords']
+    n_rows, n_cols = numRowsCols(nw_coords,sw_coords,ne_coords)
     accessToken = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA'
-    url = "https://api.mapbox.com/styles/v1/lukasvdm/cl6bxq32t005715rua6cxmqys/tiles/256/19/91563/211676?"+"access_token="+accessToken
-    req = requests.get(url)
-    print(req.status_code,"\n",req.headers['content-type'])
-    tile_x = '1'
-    tile_y = '2'
-    completePath = os.path.join(absolute_path, 'results/02Images/OWN/'+tile_x+'/')
-    os.makedirs(completePath)
-    with BytesIO(req.content ) as f:
-        file_data = f.read()
-        image = Image.open(io.BytesIO(file_data))
-        completeName = os.path.join(completePath,tile_y+'.jpeg')
-        image.save(completeName,'JPEG')
+    url_base = "https://api.mapbox.com/styles/v1/lukasvdm/cl6bxq32t005715rua6cxmqys/tiles/256/19/" 
+    path = os.path.join(absolute_path, 'results/02Images/MAP/19/')
+    #os.makedirs(path)
+    start_tile_xy, end_tile_xy = startEndTilesXY(nw_coords, se_coords)
+    print("START TILE XY:   ",start_tile_xy)
+    for c in range(n_cols):
+        x = int(start_tile_xy["x"])+c
+        path_with_col = os.path.join(path,str(x)+"/")#col number
+        os.makedirs(path_with_col)
+        for r in range(n_rows):
+            y = int(start_tile_xy["y"])+r
+            url_complete = url_base+str(x)+"/"+str(y)+"?"+"access_token="+accessToken
+            req = requests.get(url_complete)
+            with BytesIO(req.content ) as f:
+                file_data = f.read()
+                image = Image.open(io.BytesIO(file_data))
+                completeName = os.path.join(path_with_col,str(y)+'.jpeg')
+                print("TEST!!!:  ",completeName)
+                image.save(completeName,'JPEG')
     return {},200
 
 
@@ -137,6 +187,7 @@ def getTiles():
 @app.route("/validateSelection",methods=['POST','GET'])
 def check():
     #TODO: check that co-ordinates have valid zoom level
+    #TODO: change from request.form to json data
     latSouthEdge = request.form['south_edge_lat']
     lngWestEdge = request.form['west_edge_lng']
     latNorthEdge = request.form['north_edge_lat']
