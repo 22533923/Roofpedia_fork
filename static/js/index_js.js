@@ -5,18 +5,20 @@ function getMapBounds(){
     west_edge_lng = bounds.getSouthWest().lng
     north_edge_lat = bounds.getNorthEast().lat
     east_edge_lng = bounds.getNorthEast().lng
-    data = {
+    coords = {
         'south_edge_lat': south_edge_lat,
         'west_edge_lng': west_edge_lng,
         'north_edge_lat': north_edge_lat,
         'east_edge_lng': east_edge_lng,
     };
-    //testReq(data);
-    request(data);
+    //postMapBounds(bounds);
+    getRasterTiles(coords);
 }
+
 
 function applyBindings() {
     document.getElementById("valSelBut").addEventListener("click", getMapBounds);
+    document.getElementById("rasterBut").addEventListener("click", getMapBounds);
 }
 
 applyBindings()
@@ -49,14 +51,35 @@ applyBindings()
 //     });
 // }
 
-function request(data) { 
+function postMapBounds(coords) { 
     $.ajax({
         type: "POST",
         url: "/validateSelection",
-        data: data,
+        data: coords,
         success: function(response){
             //window.location.href = response.redirect;
             console.log("success")
         }
    });
+  }
+
+  function getRasterTiles(coords){
+    $.ajax({
+        type: "POST",
+        url: "/mapbox-raster-tiles",
+        data: coords,
+        success: function(response){
+            console.log("success from FE")
+        }
+   });
+//     accessToken = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA';
+//     $.ajax({
+//         type: "GET",
+//         url: "https://api.mapbox.com/styles/v1/lukasvdm/cl6bxq32t005715rua6cxmqys/tiles/256/19/91563/211676?"+
+//         "access_token="+accessToken,
+//         success: function(response){
+//             console.log("success - tile fetched ")
+//             console.log(response)
+//         }
+//    });
   }

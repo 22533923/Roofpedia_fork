@@ -4,6 +4,7 @@ from audioop import add
 from fileinput import filename
 from glob import glob
 import os
+from urllib import response
 from xml.etree.ElementTree import tostring
 import torch
 import toml
@@ -11,13 +12,17 @@ import threading
 import geopandas as gpd
 import overpass
 import osm2geojson
+import requests
+import PIL  
+import io
 
 from geojson import dump
 from src.predict import predict
 from src.extract import intersection
 from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for
-from shapely.geometry import Point
 from geopy.geocoders import Nominatim
+from PIL import Image
+from io import BytesIO
 
 class Predict_and_extract:
     #Code to run Roofpedia model on sample data
@@ -110,9 +115,27 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
-@app.route("/test")
-def test():
-    return jsonify({'success': "success2!"}), 200
+@app.route("/mapbox-raster-tiles",methods=['POST','GET'])
+def getTiles():
+    accessToken = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA'
+    url = "https://api.mapbox.com/styles/v1/lukasvdm/cl6bxq32t005715rua6cxmqys/tiles/256/19/91563/211676?"+"access_token="+accessToken
+    req = requests.get(url)
+    print(req.status_code,"\n",req.headers['content-type'])
+    tile_x = '1'
+    tile_y = '2'
+    completePath = os.path.join(absolute_path, 'results/02Images/OWN/'+tile_x+'/')
+    os.makedirs(completePath)
+    with BytesIO(req.content ) as f:
+        file_data = f.read()
+        image = Image.open(io.BytesIO(file_data))
+        completeName = os.path.join(completePath,tile_y+'.jpeg')
+        image.save(completeName,'JPEG')
+    #file = open(req.content,mode='r')
+    # file.write(req.content)
+    # file.close()
+    return {},200
+
+
 
 @app.route("/validateSelection",methods=['POST','GET'])
 def check():
