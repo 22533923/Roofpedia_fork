@@ -130,9 +130,6 @@ def getTiles():
         image = Image.open(io.BytesIO(file_data))
         completeName = os.path.join(completePath,tile_y+'.jpeg')
         image.save(completeName,'JPEG')
-    #file = open(req.content,mode='r')
-    # file.write(req.content)
-    # file.close()
     return {},200
 
 
