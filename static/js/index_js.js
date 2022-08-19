@@ -15,32 +15,34 @@ function getMapBounds(){
         'sw_coords': {'lat':sw_coords.lat, 'lng': sw_coords.lng},
         'se_coords': {'lat':se_coords.lat, 'lng': se_coords.lng},
     };
-    //postMapBounds(bounds);
-    getRasterTiles(coords);
+    return coords
 }
 
 
 function applyBindings() {
-    document.getElementById("valSelBut").addEventListener("click", getMapBounds);
-    document.getElementById("rasterBut").addEventListener("click", getMapBounds);
+    document.getElementById("valSelBut").addEventListener("click", postMapBounds);
+    document.getElementById("rasterBut").addEventListener("click", getRasterTiles);
 }
 
 applyBindings()
 
 
-function postMapBounds(coords) { 
+function postMapBounds() { 
+    coords = getMapBounds()
     $.ajax({
         type: "POST",
         url: "/validateSelection",
-        data: coords,
+        data: JSON.stringify(coords),
+        dataType: "json",
+        contentType: "application/json",
         success: function(response){
-            //window.location.href = response.redirect;
-            console.log("success")
+            console.log("Success - roof polygons geojson")
         }
    });
   }
 
-  function getRasterTiles(coords){
+  function getRasterTiles(){
+    coords = getMapBounds()
     $.ajax({
         type: "POST",
         url: "/mapbox-raster-tiles",
@@ -48,17 +50,7 @@ function postMapBounds(coords) {
         dataType: "json",
         contentType: "application/json",
         success: function(response){
-            console.log("success from FE")
+            console.log("Success - Raster tiles")
         }
    });
-//     accessToken = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA';
-//     $.ajax({
-//         type: "GET",
-//         url: "https://api.mapbox.com/styles/v1/lukasvdm/cl6bxq32t005715rua6cxmqys/tiles/256/19/91563/211676?"+
-//         "access_token="+accessToken,
-//         success: function(response){
-//             console.log("success - tile fetched ")
-//             console.log(response)
-//         }
-//    });
   }

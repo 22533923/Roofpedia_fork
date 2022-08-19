@@ -10,7 +10,7 @@ function request() {
        if(response.redirect === "running"){
        console.log(response);
      }else{
-        window.location.href = response.redirect;
+        window.location.href = response.redirect+'?extent='+response.extent;
      }
     }
    });

@@ -27,13 +27,12 @@ from io import BytesIO
 class Predict_and_extract:
     #Code to run Roofpedia model on sample data
 
-    def pred_and_ext(self,city):
+    def pred_and_ext(self,extent):
 
         config = toml.load('config/predict-config.toml')
 
-        # city_name = args.city
-        # target_type = args.type
-        city_name = city
+
+        city_name = extent
         target_type = "Solar"
 
         tiles_dir = os.path.join("results", '02Images', city_name)
@@ -59,46 +58,56 @@ class Predict_and_extract:
         return True
 
 #global identifier
+global complete
+global running
+global absolute_path
+global model_thread_name
+global extent
 complete = False
 running = False
 absolute_path = os.path.dirname(__file__)
 model_thread_name = ""
+extent = ""
 #mapbox_access_token = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA'
 #methods
 
-def run_model(city):
+def run_model(extent):
+    
     #start a thread to run the model as a background task
     global complete,model_thread_name
     model_thread_name = threading.current_thread().name
     print("Starting thread: ",model_thread_name)
     new_class = Predict_and_extract()
-    new_class.pred_and_ext(city)
+    new_class.pred_and_ext(extent)
+    print("TESTTT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     complete = True
     model_thread_name = ""
 
 
 def query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge):
-    global absolute_path,TESTQ
+    #TODO make name of geojson file dynamic. Currently hardcoded to "MAP"
+    #global absolute_path
     latSouthEdge = str(latSouthEdge)
     lngWestEdge = str(lngWestEdge)
     latNorthEdge = str(latNorthEdge)
     lngEastEdge = str(lngEastEdge)
     QUERY = '[out:json] [timeout:25];(node["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');way["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');relation["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+'););(._;>;);out body;'
+    print(QUERY)
     api = overpass.API()
     res = api.get(QUERY,build=False)
     res_geojson = osm2geojson.json2geojson(res, filter_used_refs=False, log_level='INFO')
     completePath = os.path.join(absolute_path, 'results/01City/')
-    with open(completePath+'TEST.geojson', 'w') as f:
+    with open(completePath+'MAP.geojson', 'w') as f:
         dump(res_geojson, f)
 
 
-def extract_features(city,type):
+def extract_features(extent,type):
     #extract rooftop features identified by Roofpedia model
-    global absolute_path
+    #global absolute_path
     geolocator = Nominatim(user_agent="my_app")
     coords = []
     addresses = []
-    gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+city+'_'+type+'.geojson'))#path to results
+    gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+extent+'_'+type+'.geojson'))#path to results
     gdf['centroid'] = gdf.centroid
     for i in range(gdf.shape[0]):
         coords.append(list(gdf.centroid[i].coords))
@@ -153,7 +162,7 @@ def home():
 
 @app.route("/mapbox-raster-tiles",methods=['POST','GET'])
 def getTiles():
-    global absolute_path
+    #global absolute_path
     request_data = request.get_json()
     nw_coords = request_data['nw_coords']
     ne_coords = request_data['ne_coords']
@@ -178,7 +187,6 @@ def getTiles():
                 file_data = f.read()
                 image = Image.open(io.BytesIO(file_data))
                 completeName = os.path.join(path_with_col,str(y)+'.jpeg')
-                print("TEST!!!:  ",completeName)
                 image.save(completeName,'JPEG')
     return {},200
 
@@ -187,38 +195,40 @@ def getTiles():
 @app.route("/validateSelection",methods=['POST','GET'])
 def check():
     #TODO: check that co-ordinates have valid zoom level
-    #TODO: change from request.form to json data
-    latSouthEdge = request.form['south_edge_lat']
-    lngWestEdge = request.form['west_edge_lng']
-    latNorthEdge = request.form['north_edge_lat']
-    lngEastEdge = request.form['east_edge_lng']
+    #TODO: change from request.form to json data -> complete?
+    request_data = request.get_json()
+    latSouthEdge = request_data['south_edge_lat']
+    lngWestEdge = request_data['west_edge_lng']
+    latNorthEdge = request_data['north_edge_lat']
+    lngEastEdge = request_data['east_edge_lng']
     query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge);
     return {},200
 
 @app.route("/finished")
 def finished():
-    coords,addresses = extract_features("TEST","Solar")
+    args = request.args
+    coords,addresses = extract_features(args["extent"],"Solar")
     return render_template("finished.html",addresses = addresses)
 
 
 @app.route("/running",methods=['POST','GET'])
 def running():
-    global running, model_thread_name
-    city = request.form['city']
+    #global running, model_thread_name, extent
+    global extent
+    extent = request.form['extent']
     if not model_thread_name:
         #string empty
-        model_thread = threading.Thread(target=run_model,args=(city,)).start()
-        running = True
+        model_thread = threading.Thread(target=run_model,args=(extent,)).start()
+        #running = True
     return render_template("running.html")
 
 
 @app.route("/track", methods=["GET"])
 def track():
-    global complete # regrab the value of complete every iteration
+    #global complete,extent # regrab the value of complete every iteration
     print(complete)
     if complete: # model has finished running, complete set to True
-        complete = True
-        return jsonify({'redirect': url_for('finished')})
+        return jsonify({'redirect': url_for('finished'),'extent': extent})
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 if __name__ == "__main__":
