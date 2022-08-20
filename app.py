@@ -4,6 +4,7 @@ from audioop import add
 from fileinput import filename
 from glob import glob
 import os
+import shutil
 from urllib import response
 from xml.etree.ElementTree import tostring
 import torch
@@ -79,7 +80,6 @@ def run_model(extent):
     print("Starting thread: ",model_thread_name)
     new_class = Predict_and_extract()
     new_class.pred_and_ext(extent)
-    print("TESTTT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     complete = True
     model_thread_name = ""
 
@@ -162,7 +162,7 @@ def home():
 
 @app.route("/mapbox-raster-tiles",methods=['POST','GET'])
 def getTiles():
-    #global absolute_path
+    #fetch raster tiles and save to local based on map extent and zoom level 19
     request_data = request.get_json()
     nw_coords = request_data['nw_coords']
     ne_coords = request_data['ne_coords']
@@ -171,8 +171,9 @@ def getTiles():
     n_rows, n_cols = numRowsCols(nw_coords,sw_coords,ne_coords)
     accessToken = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA'
     url_base = "https://api.mapbox.com/styles/v1/lukasvdm/cl6bxq32t005715rua6cxmqys/tiles/256/19/" 
-    path = os.path.join(absolute_path, 'results/02Images/MAP/19/')
-    #os.makedirs(path)
+    if os.path.isdir(os.path.join(absolute_path, 'results/02Images/MAP/19/')):
+        shutil.rmtree(os.path.join(absolute_path, 'results/02Images/MAP/19/'))#remove directory
+        path = os.path.join(absolute_path, 'results/02Images/MAP/19/')
     start_tile_xy, end_tile_xy = startEndTilesXY(nw_coords, se_coords)
     print("START TILE XY:   ",start_tile_xy)
     for c in range(n_cols):

@@ -6,29 +6,65 @@
 
 {%block body%} 
     <h3 style="text-align: center">The model is finished! Check results below.</h3>
-
     <div class="content">
         {%if addresses|length < 1%}
-            <h3>There are no tasks. Add one below!</h3>
+            <h3>No solar roofs found.</h3>
         {%else%}
-        <table class="table">
-            <thead>
-              <tr>
-                <th scope="col">Address</th>
-                <th scope="col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-                {% for address in addresses %}
-                <tr>
-                    <td>{{address}}</td>
-                <td>
-                    <a href="#">View</a> 
-                </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-          </table>
+        <div class="container d-flex justify-content-center ">
+            <div class="row">
+              <div class="table-responseive col-md-7">
+                <table class="table table-bordered" >
+                    <thead>
+                      <tr>
+                        <th scope="col">Address</th>
+                        <th scope="col">Polygon area [m<sup>2</sup>]</th>
+                        <th scope="col">Estimated peak power [kW]</th>
+                        <th scope="col">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {% for address in addresses %}
+                        <tr>
+                            <td>
+                                {{address}}
+                            </td>
+                            <td>
+                                100
+                            </td>
+                            <td scope="col">1000</td>
+                            <td>
+                                <a href="#">View</a>
+                                <a href="#">Remove</a> 
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
+              </div>
+              <div class="table-responseive col-md-5">
+                <div class="row">
+                    <table class="table table-bordered"  >
+                        <thead>
+                          <tr>
+                            <th>Number of solar roofs: </th>
+                          </tr>
+                          <tr>
+                            <th>Total area: </th>
+                          </tr>
+                        </thead>
+                      </table>
+                </div>
+                <div class="row">
+                    <div id='satellite-map' style='width: 500px; height: 400px; margin: auto;'></div>
+                </div>
+              </div>
+            </div>
+          </div>
         {%endif%}
     </div>
+
+    <main>
+        <div id='satellite-map' style='width: 400px; height: 400px; margin: auto;'></div>
+    </main>
+    <script src="{{url_for('static', filename='js/satelliteMap.js')}}"></script>
 {%endblock%}
