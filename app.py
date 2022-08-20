@@ -3,6 +3,7 @@ from asyncio import current_task
 from audioop import add
 from fileinput import filename
 from glob import glob
+import json
 import os
 import shutil
 from urllib import response
@@ -116,6 +117,16 @@ def extract_features(extent,type):
         addresses.append(geolocator.reverse(c_string))
     return coords, addresses
 
+def extractPolygonAreas(extent,type):
+    gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+extent+'_'+type+'.geojson'))#path to results
+    print(gdf.crs)
+    print(gdf.head(2))
+    tost = gdf.copy()
+    tost= tost.to_crs({'init': 'epsg:3857'})#change from projection with unit of degree to cartesian projection with unit m 
+    tost["area"] = tost['geometry'].area
+    print(tost.crs)
+    print(tost.head(2))
+
 def deg2num(lat_deg, lon_deg, zoom):
   lat_rad = math.radians(lat_deg)
   n = 2.0 ** zoom
@@ -209,7 +220,15 @@ def check():
 def finished():
     args = request.args
     coords,addresses = extract_features(args["extent"],"Solar")
-    return render_template("finished.html",addresses = addresses)
+    extractPolygonAreas("MAP","Solar")
+    #get geojson results file to pass to finished.html
+    path = os.path.abspath("results/04Results/"+extent+"_Solar.geojson")
+    print(path)
+    f = open(path,"r")
+    geojson_data = json.load(f)
+    print(geojson_data)
+    f.close()
+    return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
 
 
 @app.route("/running",methods=['POST','GET'])
@@ -226,9 +245,9 @@ def running():
 
 @app.route("/track", methods=["GET"])
 def track():
-    #global complete,extent # regrab the value of complete every iteration
-    print(complete)
-    if complete: # model has finished running, complete set to True
+    global complete
+    if complete: # model has finished running, set complete False
+        complete = False
         return jsonify({'redirect': url_for('finished'),'extent': extent})
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
