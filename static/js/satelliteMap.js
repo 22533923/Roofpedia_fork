@@ -1,9 +1,34 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA';
-
 var geo_data = JSON.parse(document.getElementById("geo_data_div").dataset.geojson_data);
-var coords = JSON.parse(document.getElementById("coords_data_div").dataset.coords);
 console.log(geo_data)
-console.log(coords)
+
+function jumpToPlace(button_id){
+    place_coords = JSON.parse(document.getElementById(button_id).dataset.coords);
+    map.jumpTo({
+        center: place_coords[0],
+        zoom: 18,
+        });
+}
+
+function removePlace(){
+    var place_coords = JSON.parse(document.getElementById("remove_but").dataset.coords);
+    var poly_area = JSON.parse(document.getElementById("remove_but").dataset.area);
+    console.log(poly_area)
+}
+
+function applyBindings() {
+    document.getElementById("wrapper").addEventListener('click', (event) => {
+        const isButton = event.target.nodeName === 'BUTTON';
+        if (!isButton) {
+          return;
+        }
+        console.log(event.target.id);
+        jumpToPlace(event.target.id)
+    })
+        //document.getElementById("view_but").addEventListener("click", jumpToPlace);
+    //document.getElementById("remove_but").addEventListener("click", removePlace);
+}
+applyBindings()
 
 const map = new mapboxgl.Map({
 container: 'satellite-map', // container ID

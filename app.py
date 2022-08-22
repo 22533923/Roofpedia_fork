@@ -185,8 +185,9 @@ def getTiles():
     if os.path.isdir(os.path.join(absolute_path, 'results/02Images/MAP/19/')):
         shutil.rmtree(os.path.join(absolute_path, 'results/02Images/MAP/19/'))#remove directory
         path = os.path.join(absolute_path, 'results/02Images/MAP/19/')
+    else:
+        path = os.path.join(absolute_path, 'results/02Images/MAP/19/')
     start_tile_xy, end_tile_xy = startEndTilesXY(nw_coords, se_coords)
-    print("START TILE XY:   ",start_tile_xy)
     for c in range(n_cols):
         x = int(start_tile_xy["x"])+c
         path_with_col = os.path.join(path,str(x)+"/")#col number
@@ -218,6 +219,7 @@ def check():
 
 @app.route("/finished")
 def finished():
+    extent = "MAP" #TODO REMVOVE
     args = request.args
     coords,addresses = extract_features(args["extent"],"Solar")
     extractPolygonAreas("MAP","Solar")
@@ -226,9 +228,24 @@ def finished():
     print(path)
     f = open(path,"r")
     geojson_data = json.load(f)
-    print(geojson_data)
     f.close()
-    return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
+    #Following code removes all features that aren't polygons
+    coords_dict = { i : coords[i] for i in range(0,len(coords))}
+    addresses_dict = { i : addresses[i] for i in range(0,len(addresses))}
+    features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
+    filtered_coords = []
+    filtered_add = []
+    filtered_feat = []
+    for key in features_dict:
+        feature = features_dict[key]
+        if features_dict[key]["geometry"]["type"] == "Polygon":
+            filtered_feat.append(feature)
+            filtered_coords.append(coords[key])
+            filtered_add.append(addresses[key])
+    geojson_data["features"] = filtered_feat
+
+            
+    return render_template("finished.html",coords = filtered_coords,addresses = filtered_add,geojson_data = geojson_data)
 
 
 @app.route("/running",methods=['POST','GET'])

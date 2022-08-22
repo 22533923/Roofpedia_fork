@@ -10,7 +10,8 @@
         {%if addresses|length < 1%}
             <h3>No solar roofs found.</h3>
         {%else%}
-        <div class="container d-flex justify-content-center ">
+        <div id="wrapper">
+          <div class="container d-flex justify-content-center ">
             <div class="row">
               <div class="table-responseive col-md-7">
                 <table class="table table-bordered" >
@@ -29,12 +30,20 @@
                                 {{address}}
                             </td>
                             <td>
-                                100
+                                {{geojson_data.features[loop.index0].properties.area|round(2)}}
                             </td>
-                            <td scope="col">1000</td>
+                            <td scope="col">some number</td>
                             <td>
-                                <a href="#">View</a>
-                                <a href="#">Remove</a> 
+                                {{coords[loop.index0]}}
+                                <button 
+                                data-coords = "{{coords[loop.index0]|tojson}}" 
+                                data-area = "geojson_data[loop.index0].properties.area"
+                                class="btn btn-primary btn-sm mb-1" 
+                                id = "view_but{{loop.index0}}">View</button>
+                                <button 
+                                data-coords = "{{coords[loop.index0]|tojson}}"
+                                data-area = "{{geojson_data.features[loop.index0].properties.area|tojson}}"
+                                class="btn btn-primary btn-sm mt-1" id = "remove_but">Remove</button> 
                             </td>
                         </tr>
                         {% endfor %}
@@ -60,6 +69,8 @@
               </div>
             </div>
           </div>
+        </div>
+
         {%endif%}
     </div>
 
@@ -69,8 +80,7 @@
 
 
     <div id="geo_data_div" data-geojson_data='{{ geojson_data|tojson }}'></div>
-    <div id="coords_data_div" data-coords='{{ coords|tojson }}'></div>
-
+    <div id="num_places_div" data-num_places='{{addresses|length}}'></div>
     <!-- CODE TO ADD DRAW FUNCTIONALITY -->
     <style>
         .calculation-box {
@@ -98,7 +108,6 @@
         <p>Click the map to draw a polygon.</p>
         <div id="calculated-area"></div>
         </div>
-
         <!-- CODE TO ADD DRAW FUNCTIONALITY -->
 
     <script src="{{url_for('static', filename='js/satelliteMap.js')}}"></script>
