@@ -10,6 +10,7 @@ function request() {
        if(response.redirect === "running"){
        console.log(response);
      }else{
+      console.log("TEST")
       window.location.href = response.redirect+'?extent='+response.extent;
      }
     }

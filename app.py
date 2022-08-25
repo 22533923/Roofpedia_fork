@@ -1,11 +1,13 @@
 from ast import Return
 from asyncio import current_task
 from audioop import add
+from crypt import methods
 from fileinput import filename
 from glob import glob
 import json
 import os
 import shutil
+from this import d
 from urllib import response
 from xml.etree.ElementTree import tostring
 import torch
@@ -22,6 +24,8 @@ from geojson import dump
 from src.predict import predict
 from src.extract import intersection
 from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
 from geopy.geocoders import Nominatim
 from PIL import Image
 from io import BytesIO
@@ -93,7 +97,6 @@ def query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge):
     latNorthEdge = str(latNorthEdge)
     lngEastEdge = str(lngEastEdge)
     QUERY = '[out:json] [timeout:25];(node["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');way["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');relation["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+'););(._;>;);out body;'
-    print(QUERY)
     api = overpass.API()
     res = api.get(QUERY,build=False)
     res_geojson = osm2geojson.json2geojson(res, filter_used_refs=False, log_level='INFO')
@@ -119,13 +122,9 @@ def extract_features(extent,type):
 
 def extractPolygonAreas(extent,type):
     gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+extent+'_'+type+'.geojson'))#path to results
-    print(gdf.crs)
-    print(gdf.head(2))
     tost = gdf.copy()
     tost= tost.to_crs({'init': 'epsg:3857'})#change from projection with unit of degree to cartesian projection with unit m 
     tost["area"] = tost['geometry'].area
-    print(tost.crs)
-    print(tost.head(2))
 
 def deg2num(lat_deg, lon_deg, zoom):
   lat_rad = math.radians(lat_deg)
@@ -165,7 +164,29 @@ def startEndTilesXY(nw_coords,se_coords):
 
 
 app = Flask(__name__)
+basedir = os.path.abspath(os.path.dirname(__file__))#pathname of app.py
+app.config['SQLALCHEMY_DATABASE_URI'] =\
+        'sqlite:///' + os.path.join(basedir, 'database.db')#specify the database you want to establish a connection with
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)#database object
+class Feature(db.Model):
+    id = db.Column(db.Integer,primary_key=True)
+    coord = db.Column(db.String(100),nullable=False)
+    address = db.Column(db.String(100000),nullable=False)
+    area = db.Column(db.Float(100),nullable=False)
 
+    def __repr__(self):
+        return f'<Feature {self.id}>'
+
+
+def getResultsFile():#fetch results stored in Results04 geojson
+    extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
+    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    path = os.path.abspath("results/04Results/"+extent+"_Solar.geojson")
+    f = open(path,"r")
+    geojson_data = json.load(f)
+    f.close()
+    return geojson_data
 
 @app.route("/")
 def home():
@@ -217,21 +238,37 @@ def check():
     query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge);
     return {},200
 
-@app.route("/finished")
+@app.route("/finished",methods=['POST','GET'])
 def finished():
-    extent = "MAP" #TODO REMVOVE
-    args = request.args
-    coords,addresses = extract_features(args["extent"],"Solar")
-    extractPolygonAreas("MAP","Solar")
+    global extent
+    #args = request.args
+    #extent = args["extent"]
+    extent = "MAP" #REMVOVE WHEN DONE TESTING
+    extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
+    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
     #get geojson results file to pass to finished.html
-    path = os.path.abspath("results/04Results/"+extent+"_Solar.geojson")
-    print(path)
-    f = open(path,"r")
-    geojson_data = json.load(f)
-    f.close()
-    #Following code removes all features that aren't polygons
-    coords_dict = { i : coords[i] for i in range(0,len(coords))}
-    addresses_dict = { i : addresses[i] for i in range(0,len(addresses))}
+    geojson_data = getResultsFile()
+    # print("CHECK1: ",addresses)
+    # if request.method == "POST":
+    #     feature_index = request.form["index"]
+    #     features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
+    #     new_coords = []
+    #     new_add = []
+    #     new_feat = []
+    #     for key in features_dict:
+    #         feature = features_dict[key]
+    #         if str(key) != str(feature_index):
+    #             new_feat.append(feature)
+    #             new_coords.append(coords[key])
+    #             new_add.append(addresses[key])
+    #     addresses = new_add
+    #     coords = new_coords
+    #     geojson_data["features"] = new_feat
+    #     print("CHECK2: ",addresses)
+    #     #return jsonify({'redirect': url_for('finished'),'extent': extent})
+    #     return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
+    # else:
+        #Following code removes all features that aren't polygons
     features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
     filtered_coords = []
     filtered_add = []
@@ -242,10 +279,10 @@ def finished():
             filtered_feat.append(feature)
             filtered_coords.append(coords[key])
             filtered_add.append(addresses[key])
+    addresses = filtered_add
+    coords = filtered_coords
     geojson_data["features"] = filtered_feat
-
-            
-    return render_template("finished.html",coords = filtered_coords,addresses = filtered_add,geojson_data = geojson_data)
+    return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
 
 
 @app.route("/running",methods=['POST','GET'])
@@ -265,11 +302,27 @@ def track():
     global complete
     if complete: # model has finished running, set complete False
         complete = False
+        #load features, coords and addresses to database
+        geojson_data = getResultsFile()
+        features = geojson_data["features"]
+        coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+        for i in range(len(features)):
+            area = features[i]["properties"]["area"]
+            coord = str(coords[i])
+            address = str(addresses[i])
+            new_feature = Feature(coord = coord, address = address,area = area)
+            print("Feature: ",coord,"   ",address,"   ",area)
+            try:
+                db.session.add(new_feature)
+                db.session.commit()
+            except:
+                print('failed to add feature')
         return jsonify({'redirect': url_for('finished'),'extent': extent})
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 if __name__ == "__main__":
     app.run(debug=True)
+    #app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 
 

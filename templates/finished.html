@@ -25,7 +25,8 @@
                     </thead>
                     <tbody>
                         {% for address in addresses %}
-                        <tr>
+                        
+                          <tr>
                             <td>
                                 {{address}}
                             </td>
@@ -34,18 +35,22 @@
                             </td>
                             <td scope="col">some number</td>
                             <td>
-                                {{coords[loop.index0]}}
                                 <button 
                                 data-coords = "{{coords[loop.index0]|tojson}}" 
                                 data-area = "geojson_data[loop.index0].properties.area"
                                 class="btn btn-primary btn-sm mb-1" 
                                 id = "view_but{{loop.index0}}">View</button>
-                                <button 
+                                <form action="/finished" method = "POST" name = "place-form">                                <button 
                                 data-coords = "{{coords[loop.index0]|tojson}}"
                                 data-area = "{{geojson_data.features[loop.index0].properties.area|tojson}}"
-                                class="btn btn-primary btn-sm mt-1" id = "remove_but">Remove</button> 
+                                data-feature_num = "{{loop.index0}}"
+                                class="btn btn-primary btn-sm mt-1"
+                                id = "remove_but{{loop.index0}}">Remove</button> 
+                                <input type="hidden" value="{{loop.index0}}" name = "index">
+                              </form>
                             </td>
                         </tr>
+                        
                         {% endfor %}
                     </tbody>
                   </table>
@@ -80,7 +85,6 @@
 
 
     <div id="geo_data_div" data-geojson_data='{{ geojson_data|tojson }}'></div>
-    <div id="num_places_div" data-num_places='{{addresses|length}}'></div>
     <!-- CODE TO ADD DRAW FUNCTIONALITY -->
     <style>
         .calculation-box {

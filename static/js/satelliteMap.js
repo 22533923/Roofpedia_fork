@@ -3,18 +3,29 @@ var geo_data = JSON.parse(document.getElementById("geo_data_div").dataset.geojso
 console.log(geo_data)
 
 function jumpToPlace(button_id){
-    place_coords = JSON.parse(document.getElementById(button_id).dataset.coords);
+    var place_coords = JSON.parse(document.getElementById(button_id).dataset.coords);
     map.jumpTo({
         center: place_coords[0],
         zoom: 18,
         });
 }
 
-function removePlace(){
-    var place_coords = JSON.parse(document.getElementById("remove_but").dataset.coords);
-    var poly_area = JSON.parse(document.getElementById("remove_but").dataset.area);
-    console.log(poly_area)
-}
+// function removePlace(button_id){
+//     var poly_area = JSON.parse(document.getElementById(button_id).dataset.area);
+//     var feature_num = document.getElementById(button_id).dataset.feature_num;
+//     $.ajax({
+//         type: "POST",
+//         url: "/finished",
+//         data: JSON.stringify({"feature_num": feature_num}),
+//         dataType: "json",
+//         contentType: "application/json",
+//         success: function(response){
+//             console.log("Success - Feature removed")
+//             window.location.reload()
+//             //window.location.href = response.redirect+'?extent='+response.extent;
+//         }
+//    });
+// }
 
 function applyBindings() {
     document.getElementById("wrapper").addEventListener('click', (event) => {
@@ -22,11 +33,12 @@ function applyBindings() {
         if (!isButton) {
           return;
         }
-        console.log(event.target.id);
-        jumpToPlace(event.target.id)
+        if(String(event.target.id).includes("view")){
+            jumpToPlace(event.target.id);
+        }// }else{
+        //     removePlace(event.target.id);
+        // };
     })
-        //document.getElementById("view_but").addEventListener("click", jumpToPlace);
-    //document.getElementById("remove_but").addEventListener("click", removePlace);
 }
 applyBindings()
 
@@ -53,7 +65,7 @@ map.on('load', () => {
     'layout': {},
     'paint': {
     'fill-color': '#0080ff', // blue color fill
-    'fill-opacity': 0.5
+    'fill-opacity': 0.4
     }
     });
     // Add a black outline around the polygon.
