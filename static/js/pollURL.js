@@ -11,7 +11,7 @@ function request() {
        console.log(response);
      }else{
       console.log("TEST")
-      window.location.href = response.redirect+'?extent='+response.extent;
+      window.location.href = response.redirect//+'?extent='+response.extent;
      }
     }
    });

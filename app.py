@@ -26,6 +26,7 @@ from src.extract import intersection
 from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+from sqlalchemy import text
 from geopy.geocoders import Nominatim
 from PIL import Image
 from io import BytesIO
@@ -78,7 +79,6 @@ extent = ""
 #methods
 
 def run_model(extent):
-    
     #start a thread to run the model as a background task
     global complete,model_thread_name
     model_thread_name = threading.current_thread().name
@@ -158,6 +158,57 @@ def startEndTilesXY(nw_coords,se_coords):
     }
     return start_tile_xy, end_tile_xy
 
+def getResultsFile(extent):#fetch results stored in Results04 geojson
+    extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
+    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    path = os.path.abspath("results/04Results/"+extent+"_Solar.geojson")
+    f = open(path,"r")
+    geojson_data = json.load(f)
+    f.close()
+    return geojson_data
+
+def filterFeatures(geojson_data, coords, addresses,extent):
+    """
+    -filter out all features in geojson_data object that aren't polygons
+    -update MAP_Solar.geojson file in 04Results with filtered features
+    -write feature representations to db. Each feature represented by unique index, coord, address and area
+    """
+    features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
+    filtered_coords = []
+    filtered_add = []
+    filtered_feat = []
+    for key in features_dict:
+        feature = features_dict[key]
+        if features_dict[key]["geometry"]["type"] == "Polygon":#feature is of type polygon, therefore keep it
+            filtered_feat.append(feature)
+            filtered_coords.append(coords[key])
+            filtered_add.append(addresses[key])
+    geojson_data["features"] = filtered_feat
+
+    #update geojson file in 04Results with filtered features
+    completePath = os.path.join(absolute_path, 'results/04Results/')
+    filename = extent + '_Solar.geojson'
+    with open(completePath+filename, 'w') as f:
+        dump(geojson_data, f)
+
+    #load features, coords and addresses to database
+    features = geojson_data["features"]
+    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    db.drop_all()#not ideal, but prevents same features from being readded to db if finished.html gets refreshed. Also takes care of primary key issue
+    db.create_all()#Features table is therefore cleared and repopulated every time finished.html refreshes
+    for i in range(len(features)):
+        area = features[i]["properties"]["area"]
+        coord = str(coords[i])
+        address = str(addresses[i])
+        new_feature = Feature(coord = coord, address = address,area = area)
+        try:
+            db.session.add(new_feature)
+            db.session.commit()
+            print('feature representations saved to db')
+        except:
+            print('failed to add feature')
+    return filtered_coords, filtered_add, geojson_data
+
 
 
 
@@ -169,6 +220,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] =\
         'sqlite:///' + os.path.join(basedir, 'database.db')#specify the database you want to establish a connection with
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)#database object
+
 class Feature(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     coord = db.Column(db.String(100),nullable=False)
@@ -179,14 +231,7 @@ class Feature(db.Model):
         return f'<Feature {self.id}>'
 
 
-def getResultsFile():#fetch results stored in Results04 geojson
-    extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
-    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
-    path = os.path.abspath("results/04Results/"+extent+"_Solar.geojson")
-    f = open(path,"r")
-    geojson_data = json.load(f)
-    f.close()
-    return geojson_data
+
 
 @app.route("/")
 def home():
@@ -244,44 +289,10 @@ def finished():
     #args = request.args
     #extent = args["extent"]
     extent = "MAP" #REMVOVE WHEN DONE TESTING
-    extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
     coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
     #get geojson results file to pass to finished.html
-    geojson_data = getResultsFile()
-    # print("CHECK1: ",addresses)
-    # if request.method == "POST":
-    #     feature_index = request.form["index"]
-    #     features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
-    #     new_coords = []
-    #     new_add = []
-    #     new_feat = []
-    #     for key in features_dict:
-    #         feature = features_dict[key]
-    #         if str(key) != str(feature_index):
-    #             new_feat.append(feature)
-    #             new_coords.append(coords[key])
-    #             new_add.append(addresses[key])
-    #     addresses = new_add
-    #     coords = new_coords
-    #     geojson_data["features"] = new_feat
-    #     print("CHECK2: ",addresses)
-    #     #return jsonify({'redirect': url_for('finished'),'extent': extent})
-    #     return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
-    # else:
-        #Following code removes all features that aren't polygons
-    features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
-    filtered_coords = []
-    filtered_add = []
-    filtered_feat = []
-    for key in features_dict:
-        feature = features_dict[key]
-        if features_dict[key]["geometry"]["type"] == "Polygon":
-            filtered_feat.append(feature)
-            filtered_coords.append(coords[key])
-            filtered_add.append(addresses[key])
-    addresses = filtered_add
-    coords = filtered_coords
-    geojson_data["features"] = filtered_feat
+    geojson_data = getResultsFile(extent)
+    coords, addresses, geojson_data = filterFeatures(geojson_data, coords, addresses,extent)
     return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
 
 
@@ -299,30 +310,25 @@ def running():
 
 @app.route("/track", methods=["GET"])
 def track():
+    """
+    called every 10s to check if model has finished running. Once model is finished: 
+    -results saved in geojson in 04Results
+    -representation of each feature in results geojson stored in DB. All features will
+    be of type polygon. In the db, each feature represented
+    by a unique id, the coordinates of the centroid, address of the centroid and
+    the polygon area.
+    -once db is populated, redirects to finished.html
+    """
     global complete
     if complete: # model has finished running, set complete False
         complete = False
-        #load features, coords and addresses to database
-        geojson_data = getResultsFile()
-        features = geojson_data["features"]
-        coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
-        for i in range(len(features)):
-            area = features[i]["properties"]["area"]
-            coord = str(coords[i])
-            address = str(addresses[i])
-            new_feature = Feature(coord = coord, address = address,area = area)
-            print("Feature: ",coord,"   ",address,"   ",area)
-            try:
-                db.session.add(new_feature)
-                db.session.commit()
-            except:
-                print('failed to add feature')
-        return jsonify({'redirect': url_for('finished'),'extent': extent})
+        extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
+        #return jsonify({'redirect': url_for('finished'),'extent': extent})
+        return jsonify({'redirect': url_for('finished')})
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 if __name__ == "__main__":
     app.run(debug=True)
-    #app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 
 
