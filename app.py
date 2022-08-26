@@ -23,10 +23,9 @@ import math
 from geojson import dump
 from src.predict import predict
 from src.extract import intersection
-from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for
+from flask import Flask, render_template, url_for, request, redirect, jsonify, url_for, session
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.sql import func
-from sqlalchemy import text
+from flask_session import Session
 from geopy.geocoders import Nominatim
 from PIL import Image
 from io import BytesIO
@@ -216,6 +215,9 @@ def filterFeatures(geojson_data, coords, addresses,extent):
 
 
 app = Flask(__name__)
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 basedir = os.path.abspath(os.path.dirname(__file__))#pathname of app.py
 app.config['SQLALCHEMY_DATABASE_URI'] =\
         'sqlite:///' + os.path.join(basedir, 'database.db')#specify the database you want to establish a connection with
@@ -286,18 +288,36 @@ def check():
     query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge);
     return {},200
 
-@app.route("/finished",methods=['POST','GET'])
-def finished():
+@app.route("/temp")
+def temp():
     global extent
     #args = request.args
     #extent = args["extent"]
     extent = "MAP" #REMVOVE WHEN DONE TESTING
     coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
-    print('FINISHED: ',coords)
     #get geojson results file to pass to finished.html
     geojson_data = getResultsFile(extent)
     geojson_data = filterFeatures(geojson_data, coords, addresses,extent)
     features = Feature.query.all()
+    session['geojson_data'] = geojson_data
+    session['features'] = features
+    print(url_for('finished'))
+    #return jsonify({'redirect': url_for('finished'),'extent': extent})
+    return redirect(url_for('finished'))
+
+@app.route("/finished",methods=['POST','GET'])
+def finished():
+    global extent
+    #args = request.args
+    #extent = args["extent"]
+    # extent = "MAP" #REMVOVE WHEN DONE TESTING
+    # coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    # #get geojson results file to pass to finished.html
+    # geojson_data = getResultsFile(extent)
+    # geojson_data = filterFeatures(geojson_data, coords, addresses,extent)
+    # features = Feature.query.all()
+    features = session['features']
+    geojson_data = session['geojson_data']
     return render_template("finished.html",features = features,geojson_data = geojson_data)
     #return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
 
@@ -330,7 +350,8 @@ def track():
         complete = False
         extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
         #return jsonify({'redirect': url_for('finished'),'extent': extent})
-        return jsonify({'redirect': url_for('finished')})
+        #return jsonify({'redirect': url_for('temp')})
+        return redirect(url_for('temp'))
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 if __name__ == "__main__":

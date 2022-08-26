@@ -12,22 +12,9 @@ function jumpToPlace(button_id){
         });
 }
 
-// function removePlace(button_id){
-//     var poly_area = JSON.parse(document.getElementById(button_id).dataset.area);
-//     var feature_num = document.getElementById(button_id).dataset.feature_num;
-//     $.ajax({
-//         type: "POST",
-//         url: "/finished",
-//         data: JSON.stringify({"feature_num": feature_num}),
-//         dataType: "json",
-//         contentType: "application/json",
-//         success: function(response){
-//             console.log("Success - Feature removed")
-//             window.location.reload()
-//             //window.location.href = response.redirect+'?extent='+response.extent;
-//         }
-//    });
-// }
+function removePlace(button_id){
+    
+}
 
 function applyBindings() {
     document.getElementById("wrapper").addEventListener('click', (event) => {
@@ -37,9 +24,9 @@ function applyBindings() {
         }
         if(String(event.target.id).includes("view")){
             jumpToPlace(event.target.id);
-        }// }else{
-        //     removePlace(event.target.id);
-        // };
+        }else{
+            removePlace(event.target.id);
+        };
     })
 }
 applyBindings()

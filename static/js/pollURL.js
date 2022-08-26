@@ -1,5 +1,6 @@
+var intervalID
 $(document).ready(function() {
-    setInterval(request, 10000);
+    intervalID = setInterval(request, 10000);
 });
 
 function request() { 
@@ -10,8 +11,9 @@ function request() {
        if(response.redirect === "running"){
        console.log(response);
      }else{
-      console.log("TEST")
-      window.location.href = response.redirect//+'?extent='+response.extent;
+      console.log("FINISHED");
+      clearInterval(intervalID);
+      window.location.href = "/finished"
      }
     }
    });

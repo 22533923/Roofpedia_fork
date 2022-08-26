@@ -17,3 +17,4 @@ New Cities.qgz
 *.geojson
 results/
 database.db
+flask_session/

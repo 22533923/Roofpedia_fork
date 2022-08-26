@@ -42,12 +42,12 @@
                             class="btn btn-primary btn-sm mb-1" 
                             id = "view_but{{loop.index0}}">View</button>
                             <form action="/finished" method = "POST" name = "place-form">                                <button 
-                            data-coords = "{{[feature.lng,feature.lat]}}"
+                            data-lng = "{{feature.lng}}" 
+                            data-lat = "{{feature.lat}}" 
                             data-area = "{{feature.area}}"
                             data-feature_id = "{{feature.id}}"
                             class="btn btn-primary btn-sm mt-1"
                             id = "remove_but{{loop.index0}}">Remove</button> 
-                            <input type="hidden" value="{{loop.index0}}" name = "index">
                           </form>
                         </td>
                     </tr>
