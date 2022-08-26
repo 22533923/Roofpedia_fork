@@ -114,8 +114,9 @@ def extract_features(extent,type):
     gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+extent+'_'+type+'.geojson'))#path to results
     gdf['centroid'] = gdf.centroid
     for i in range(gdf.shape[0]):
-        coords.append(list(gdf.centroid[i].coords))
-        (lon,lat) = coords[i][0]
+        (lon,lat) = (gdf.centroid[i].coords[0])
+        coordsList = [lon,lat]
+        coords.append(coordsList)
         c_string = str(lat) + ', ' + str(lon)
         addresses.append(geolocator.reverse(c_string))
     return coords, addresses
@@ -174,15 +175,12 @@ def filterFeatures(geojson_data, coords, addresses,extent):
     -write feature representations to db. Each feature represented by unique index, coord, address and area
     """
     features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
-    filtered_coords = []
-    filtered_add = []
+    #filtered_coords = []
     filtered_feat = []
     for key in features_dict:
         feature = features_dict[key]
         if features_dict[key]["geometry"]["type"] == "Polygon":#feature is of type polygon, therefore keep it
             filtered_feat.append(feature)
-            filtered_coords.append(coords[key])
-            filtered_add.append(addresses[key])
     geojson_data["features"] = filtered_feat
 
     #update geojson file in 04Results with filtered features
@@ -198,16 +196,19 @@ def filterFeatures(geojson_data, coords, addresses,extent):
     db.create_all()#Features table is therefore cleared and repopulated every time finished.html refreshes
     for i in range(len(features)):
         area = features[i]["properties"]["area"]
-        coord = str(coords[i])
+        #coord = str(coords[i][0])
+        #coord = str(coords[i])
+        lng = coords[i][0]
+        lat = coords[i][1]
         address = str(addresses[i])
-        new_feature = Feature(coord = coord, address = address,area = area)
+        new_feature = Feature(lng = lng,lat = lat, address = address,area = area)
         try:
             db.session.add(new_feature)
             db.session.commit()
             print('feature representations saved to db')
         except:
             print('failed to add feature')
-    return filtered_coords, filtered_add, geojson_data
+    return geojson_data
 
 
 
@@ -223,7 +224,9 @@ db = SQLAlchemy(app)#database object
 
 class Feature(db.Model):
     id = db.Column(db.Integer,primary_key=True)
-    coord = db.Column(db.String(100),nullable=False)
+    lng = db.Column(db.Float,nullable=False)
+    lat = db.Column(db.Float,nullable=False)
+    #coord = db.Column(db.String(100),nullable=False)
     address = db.Column(db.String(100000),nullable=False)
     area = db.Column(db.Float(100),nullable=False)
 
@@ -290,10 +293,13 @@ def finished():
     #extent = args["extent"]
     extent = "MAP" #REMVOVE WHEN DONE TESTING
     coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    print('FINISHED: ',coords)
     #get geojson results file to pass to finished.html
     geojson_data = getResultsFile(extent)
-    coords, addresses, geojson_data = filterFeatures(geojson_data, coords, addresses,extent)
-    return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
+    geojson_data = filterFeatures(geojson_data, coords, addresses,extent)
+    features = Feature.query.all()
+    return render_template("finished.html",features = features,geojson_data = geojson_data)
+    #return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
 
 
 @app.route("/running",methods=['POST','GET'])

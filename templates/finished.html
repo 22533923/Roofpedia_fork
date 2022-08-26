@@ -7,7 +7,7 @@
 {%block body%} 
     <h3 style="text-align: center">The model is finished! Check results below.</h3>
     <div class="content">
-        {%if addresses|length < 1%}
+        {%if features|length < 1%}
             <h3>No solar roofs found.</h3>
         {%else%}
         <div id="wrapper">
@@ -24,7 +24,36 @@
                       </tr>
                     </thead>
                     <tbody>
-                        {% for address in addresses %}
+                      {% for feature in features %}
+                        
+                      <tr>
+                        <td>
+                            {{feature.address}}
+                        </td>
+                        <td>
+                            {{feature.area|round(2)}}
+                        </td>
+                        <td scope="col">some number</td>
+                        <td>
+                            <button 
+                            data-lng = "{{feature.lng}}" 
+                            data-lat = "{{feature.lat}}" 
+                            data-area = "{{feature.area}}"
+                            class="btn btn-primary btn-sm mb-1" 
+                            id = "view_but{{loop.index0}}">View</button>
+                            <form action="/finished" method = "POST" name = "place-form">                                <button 
+                            data-coords = "{{[feature.lng,feature.lat]}}"
+                            data-area = "{{feature.area}}"
+                            data-feature_id = "{{feature.id}}"
+                            class="btn btn-primary btn-sm mt-1"
+                            id = "remove_but{{loop.index0}}">Remove</button> 
+                            <input type="hidden" value="{{loop.index0}}" name = "index">
+                          </form>
+                        </td>
+                    </tr>
+                    
+                    {% endfor %}
+                        <!-- {% for address in addresses %}
                         
                           <tr>
                             <td>
@@ -51,7 +80,7 @@
                             </td>
                         </tr>
                         
-                        {% endfor %}
+                        {% endfor %} -->
                     </tbody>
                   </table>
               </div>

@@ -3,9 +3,11 @@ var geo_data = JSON.parse(document.getElementById("geo_data_div").dataset.geojso
 console.log(geo_data)
 
 function jumpToPlace(button_id){
-    var place_coords = JSON.parse(document.getElementById(button_id).dataset.coords);
+    //var place_coords = JSON.parse(document.getElementById(button_id).dataset.coords);
+    var place_lng = document.getElementById(button_id).dataset.lng;
+    var place_lat = document.getElementById(button_id).dataset.lat;
     map.jumpTo({
-        center: place_coords[0],
+        center: [place_lng,place_lat],
         zoom: 18,
         });
 }
