@@ -41,7 +41,7 @@
                             data-area = "{{feature.area}}"
                             class="btn btn-primary btn-sm mb-1" 
                             id = "view_but{{loop.index0}}">View</button>
-                            <form action="/finished" method = "POST" name = "place-form">                                <button 
+                            <form action="/delete/{{feature.id}}" method = "POST" name = "place-form">                                <button 
                             data-lng = "{{feature.lng}}" 
                             data-lat = "{{feature.lat}}" 
                             data-area = "{{feature.area}}"
@@ -53,34 +53,6 @@
                     </tr>
                     
                     {% endfor %}
-                        <!-- {% for address in addresses %}
-                        
-                          <tr>
-                            <td>
-                                {{address}}
-                            </td>
-                            <td>
-                                {{geojson_data.features[loop.index0].properties.area|round(2)}}
-                            </td>
-                            <td scope="col">some number</td>
-                            <td>
-                                <button 
-                                data-coords = "{{coords[loop.index0]|tojson}}" 
-                                data-area = "geojson_data[loop.index0].properties.area"
-                                class="btn btn-primary btn-sm mb-1" 
-                                id = "view_but{{loop.index0}}">View</button>
-                                <form action="/finished" method = "POST" name = "place-form">                                <button 
-                                data-coords = "{{coords[loop.index0]|tojson}}"
-                                data-area = "{{geojson_data.features[loop.index0].properties.area|tojson}}"
-                                data-feature_num = "{{loop.index0}}"
-                                class="btn btn-primary btn-sm mt-1"
-                                id = "remove_but{{loop.index0}}">Remove</button> 
-                                <input type="hidden" value="{{loop.index0}}" name = "index">
-                              </form>
-                            </td>
-                        </tr>
-                        
-                        {% endfor %} -->
                     </tbody>
                   </table>
               </div>

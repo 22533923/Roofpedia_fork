@@ -228,14 +228,11 @@ class Feature(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     lng = db.Column(db.Float,nullable=False)
     lat = db.Column(db.Float,nullable=False)
-    #coord = db.Column(db.String(100),nullable=False)
     address = db.Column(db.String(100000),nullable=False)
     area = db.Column(db.Float(100),nullable=False)
 
     def __repr__(self):
         return f'<Feature {self.id}>'
-
-
 
 
 @app.route("/")
@@ -301,8 +298,6 @@ def temp():
     features = Feature.query.all()
     session['geojson_data'] = geojson_data
     session['features'] = features
-    print(url_for('finished'))
-    #return jsonify({'redirect': url_for('finished'),'extent': extent})
     return redirect(url_for('finished'))
 
 @app.route("/finished",methods=['POST','GET'])
@@ -311,16 +306,23 @@ def finished():
     #args = request.args
     #extent = args["extent"]
     # extent = "MAP" #REMVOVE WHEN DONE TESTING
-    # coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
-    # #get geojson results file to pass to finished.html
-    # geojson_data = getResultsFile(extent)
-    # geojson_data = filterFeatures(geojson_data, coords, addresses,extent)
-    # features = Feature.query.all()
     features = session['features']
     geojson_data = session['geojson_data']
     return render_template("finished.html",features = features,geojson_data = geojson_data)
     #return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
 
+
+@app.route("/delete/<int:id>",methods = ["GET","POST"])
+def delete(id):
+    feature_to_delete = Feature.query.get_or_404(id)
+    try:
+        db.session.delete(feature_to_delete)
+        db.session.commit()
+        features = Feature.query.all()
+        geojson_data = session["geojson_data"]
+        return render_template("finished.html",features = features,geojson_data = geojson_data)
+    except:
+        return 'failed'
 
 @app.route("/running",methods=['POST','GET'])
 def running():
@@ -353,6 +355,7 @@ def track():
         #return jsonify({'redirect': url_for('temp')})
         return redirect(url_for('temp'))
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
+
 
 if __name__ == "__main__":
     app.run(debug=True)
