@@ -39,9 +39,16 @@
                             data-lng = "{{feature.lng}}" 
                             data-lat = "{{feature.lat}}" 
                             data-area = "{{feature.area}}"
+                            data-feature_id = "{{feature.id}}"
                             class="btn btn-primary btn-sm mb-1" 
                             id = "view_but{{loop.index0}}">View</button>
-                            <form action="/delete/{{feature.id}}" method = "POST" name = "place-form">                                <button 
+                            <a
+                            class="btn btn-primary btn-sm mb-1" 
+                            id = "details_but{{loop.index0}}"
+                            href = "/details/{{feature.id}}">
+                              Details
+                            </a>
+                            <form action="/delete/{{feature.id}}" method = "POST" >                                <button 
                             data-lng = "{{feature.lng}}" 
                             data-lat = "{{feature.lat}}" 
                             data-area = "{{feature.area}}"
@@ -61,10 +68,10 @@
                     <table class="table table-bordered"  >
                         <thead>
                           <tr>
-                            <th>Number of solar roofs: </th>
+                            <th>Number of solar roofs: {{features|length}}</th>
                           </tr>
                           <tr>
-                            <th>Total area: </th>
+                            <th>Total area: {{ (features|sum(attribute='area'))|round(2) }}m<sup>2</sup></th>
                           </tr>
                         </thead>
                       </table>
@@ -115,5 +122,5 @@
         </div>
         <!-- CODE TO ADD DRAW FUNCTIONALITY -->
 
-    <script src="{{url_for('static', filename='js/satelliteMap.js')}}"></script>
+    <script src="{{url_for('static', filename='js/finished.js')}}"></script>
 {%endblock%}

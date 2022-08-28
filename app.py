@@ -167,6 +167,20 @@ def getResultsFile(extent):#fetch results stored in Results04 geojson
     f.close()
     return geojson_data
 
+def filterForFeature(geojson_data,id):
+    """
+    search for a specific feature based on its ID and filter the geojson such that it
+    only contains that one feature.
+    """
+    features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"])) }
+    filtered_feat = []
+    for key in features_dict:
+        if key+1 == id:
+            feature = features_dict[key]
+            filtered_feat.append(feature)
+    geojson_data["features"] = filtered_feat
+    return geojson_data
+
 def filterFeatures(geojson_data, coords, addresses,extent):
     """
     -filter out all features in geojson_data object that aren't polygons
@@ -209,8 +223,20 @@ def filterFeatures(geojson_data, coords, addresses,extent):
             print('failed to add feature')
     return geojson_data
 
-
-
+def buildURL(area,lng,lat,modType,arrType,systLoss,tilt,azimuth):
+    """
+    Receieve: area and coordinates of installation
+    Output: URL to be used in GET to PVWatts API
+    -converts area [m^2] of system to a DC power rating [kW]
+    -assumes a typical 400W residential panel will have surface area of 2[m^2]
+    -defines other parameters to be used in PVWatts API estimation as constants
+    modType = 0 #standard module type
+    arrType = 1 #fixed - roof mounted
+    systLoss = 14.08 #system losses %
+    tilt = 20 #default angle for fixed array
+    azimuth = 180 #default angle for northern hemisphere
+    """
+    pass
 
 
 
@@ -323,6 +349,16 @@ def delete(id):
         return render_template("finished.html",features = features,geojson_data = geojson_data)
     except:
         return 'failed'
+
+@app.route("/details/<int:id>",methods = ["GET","POST"])
+def details(id):
+    geojson_data = session['geojson_data']
+    try:
+        feature = Feature.query.get(id)
+    except:
+        return "feature not found"
+    return render_template("details.html",feature = feature,geojson_data = geojson_data)
+
 
 @app.route("/running",methods=['POST','GET'])
 def running():

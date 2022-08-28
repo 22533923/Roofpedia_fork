@@ -1,35 +1,16 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA';
 var geo_data = JSON.parse(document.getElementById("geo_data_div").dataset.geojson_data);
+var lat = document.getElementById("feature_data_div").dataset.lat;
+var lng = document.getElementById("feature_data_div").dataset.lng;
 console.log(geo_data)
 
-function jumpToPlace(button_id){
-    //var place_coords = JSON.parse(document.getElementById(button_id).dataset.coords);
-    var place_lng = document.getElementById(button_id).dataset.lng;
-    var place_lat = document.getElementById(button_id).dataset.lat;
+function jumpToPlace(){
     map.jumpTo({
-        center: [place_lng,place_lat],
+        center: [lng,lat],
         zoom: 18,
         });
-}
+};
 
-function removePlace(button_id){
-    
-}
-
-function applyBindings() {
-    document.getElementById("wrapper").addEventListener('click', (event) => {
-        const isButton = event.target.nodeName === 'BUTTON';
-        if (!isButton) {
-          return;
-        }
-        if(String(event.target.id).includes("view")){
-            jumpToPlace(event.target.id);
-        }else{
-            removePlace(event.target.id);
-        };
-    })
-}
-applyBindings()
 
 const map = new mapboxgl.Map({
 container: 'satellite-map', // container ID
@@ -40,6 +21,8 @@ zoom: 9 // starting zoom
 
 //CODE TO ADD POLYGONS TO MAP
 map.on('load', () => {
+    jumpToPlace();
+    
     // Add a data source containing GeoJSON data.
     map.addSource('polygons', {
     'type': 'geojson',
@@ -104,25 +87,3 @@ const draw = new MapboxDraw({
     }
     }
 //CODE TO ADD DRAWING FUNCTIONALITY
-
-
-const nav = new mapboxgl.NavigationControl({
-    visualizePitch: true
-});
-
-map.addControl(nav, 'bottom-right');
-
-map.addControl(new mapboxgl.GeolocateControl({
-    positionOptions: {
-        enableHighAccuracy: true
-    },
-    trackUserLocation: true,
-    showUserHeading: true
-}));
-
-map.addControl(
-    new MapboxGeocoder({
-    accessToken: mapboxgl.accessToken,
-    mapboxgl: mapboxgl
-    })
-    );
