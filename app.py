@@ -224,20 +224,15 @@ def filterFeatures(geojson_data, coords, addresses,extent):
             print('failed to add feature')
     return geojson_data
 
-def buildURL(area,lng,lat,modType,arrType,systLoss,tilt,azimuth):
+def areaToPower(area):
     """
-    Receieve: area and coordinates of installation
-    Output: URL to be used in GET to PVWatts API
-    -converts area [m^2] of system to a DC power rating [kW]
-    -assumes a typical 400W residential panel will have surface area of 2[m^2]
-    -defines other parameters to be used in PVWatts API estimation as constants
-    modType = 0 #standard module type
-    arrType = 1 #fixed - roof mounted
-    systLoss = 14.08 #system losses %
-    tilt = 20 #default angle for fixed array
-    azimuth = 180 #default angle for northern hemisphere
+    assume typical residential setup looks as follows:
+    -array of 1m x 1.6m, 60 cell panels
+    -typical power rating of 300-330W per 60 cell panel -> assume 315W
+    -power/m^2 surface area -> 196.875W/m^2
     """
-    pass
+    power = float(area)*196.875
+    return power
 
 
 
@@ -365,7 +360,8 @@ def power():
     api_key = "YYhHCjfb0KfwJPwQWmDvDLoN4l2hqhWb5l6t9Bpr"
     lat = str(request.form["lat"])
     lng = str(request.form["lng"])
-    area = str(request.form["area"])
+    area = request.form["area"]
+    new_area = request.form["new_area"]
     module_type = str(request.form["module_type"])
     array_type = str(request.form["array_type"])
     losses = str(request.form["system_loss"])
@@ -374,12 +370,15 @@ def power():
     dc_ac_ratio = str(request.form["dc_ac_ratio"])
     inv_eff = str(request.form["inverter_eff"])
     gcr = str(request.form["ground_coverage"])
-    system_capacity = str(4)
+    if not new_area == "":
+        system_capacity = str(areaToPower(new_area)/1000.0)
+    else:
+        system_capacity = str(areaToPower(area)/1000.0)
+    print(system_capacity)
     url = "https://developer.nrel.gov/api/pvwatts/v6.json?api_key="+api_key+"&lat="+lat+"&lon="+lng+"&system_capacity="+system_capacity+"&module_type="+module_type+"&losses="+losses+"&array_type="+array_type+"&tilt="+tilt+"&azimuth="+azimuth+"&dc_ac_ratio="+dc_ac_ratio+"&gcr="+gcr+"&inv_eff="+inv_eff
     try:
         response = requests.get(url)
         response_json = response.json()
-        print(response_json)
     except:
         return "failed to get request"
 
