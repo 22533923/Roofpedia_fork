@@ -93,34 +93,5 @@
 
 
     <div id="geo_data_div" data-geojson_data='{{ geojson_data|tojson }}'></div>
-    <!-- CODE TO ADD DRAW FUNCTIONALITY -->
-    <style>
-        .calculation-box {
-        height: 120px;
-        width: 100px;
-        position: absolute;
-        bottom: 90px;
-        left: 740px;
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 10px;
-        text-align: center;
-        }
-         
-        p {
-        font-family: 'Open Sans';
-        margin: 0;
-        font-size: 13px;
-        }
-        </style>
-        <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-        <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.js"></script>
-        <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.css" type="text/css">
-        <div id="satellite-map"></div>
-        <div class="calculation-box">
-        <p>Click the map to draw a polygon.</p>
-        <div id="calculated-area"></div>
-        </div>
-        <!-- CODE TO ADD DRAW FUNCTIONALITY -->
-
     <script src="{{url_for('static', filename='js/finished.js')}}"></script>
 {%endblock%}

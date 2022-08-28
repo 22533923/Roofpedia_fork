@@ -13,48 +13,13 @@ function jumpToPlace(){
 
 
 const map = new mapboxgl.Map({
-container: 'satellite-map', // container ID
+container: 'satellite-map-details', // container ID
 style: 'mapbox://styles/mapbox/satellite-v9', // style URL
 center: [137.9150899566626, 36.25956997955441], // starting position [lng, lat]
 zoom: 9 // starting zoom
 });
 
-//CODE TO ADD POLYGONS TO MAP
-map.on('load', () => {
-    jumpToPlace();
-    
-    // Add a data source containing GeoJSON data.
-    map.addSource('polygons', {
-    'type': 'geojson',
-    'data': geo_data
-    });
-     
-    // Add a new layer to visualize the polygon.
-    map.addLayer({
-    'id': 'polygons',
-    'type': 'fill',
-    'source': 'polygons', // reference the data source
-    'layout': {},
-    'paint': {
-    'fill-color': '#0080ff', // blue color fill
-    'fill-opacity': 0.4
-    }
-    });
-    // Add a black outline around the polygon.
-    map.addLayer({
-    'id': 'outline',
-    'type': 'line',
-    'source': 'polygons',
-    'layout': {},
-    'paint': {
-    'line-color': '#000',
-    'line-width': 3
-    }
-    });
-    });
-//CODE TO ADD POLYGONS TO MAP
-
-//CODE TO ADD DRAWING FUNCTIONALITY
+//CODE FOR DRAW FUNCTION
 const draw = new MapboxDraw({
     displayControlsDefault: false,
     // Select which mapbox-gl-draw control buttons to add to the map.
@@ -86,4 +51,39 @@ const draw = new MapboxDraw({
     alert('Click the map to draw a polygon.');
     }
     }
-//CODE TO ADD DRAWING FUNCTIONALITY
+//CODE FOR DRAW FUNCTION
+
+//CODE TO ADD POLYGONS TO MAP
+map.on('load', () => {
+    jumpToPlace();
+    // Add a data source containing GeoJSON data.
+    map.addSource('polygons', {
+    'type': 'geojson',
+    'data': geo_data
+    });
+     
+    // Add a new layer to visualize the polygon.
+    map.addLayer({
+    'id': 'polygons',
+    'type': 'fill',
+    'source': 'polygons', // reference the data source
+    'layout': {},
+    'paint': {
+    'fill-color': '#0080ff', // blue color fill
+    'fill-opacity': 0.4
+    }
+    });
+    // Add a black outline around the polygon.
+    map.addLayer({
+    'id': 'outline',
+    'type': 'line',
+    'source': 'polygons',
+    'layout': {},
+    'paint': {
+    'line-color': '#000',
+    'line-width': 3
+    }
+    });
+    });
+//CODE TO ADD POLYGONS TO MAP
+
