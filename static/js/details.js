@@ -44,7 +44,7 @@ const draw = new MapboxDraw({
     const area = turf.area(data);
     // Restrict the area to 2 decimal points.
     const rounded_area = Math.round(area * 100) / 100;
-    answer.innerHTML = `<p><strong>${rounded_area}</strong></p><p>square meters</p>`;
+    answer.innerHTML = `${rounded_area}`;
     } else {
     answer.innerHTML = '';
     if (e.type !== 'draw.delete')

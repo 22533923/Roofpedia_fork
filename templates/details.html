@@ -23,6 +23,9 @@
                                     <tr>
                                         <td><strong>Coordinates: </strong> ({{feature.lat}}, {{feature.lng}})</td>
                                     </tr>
+                                    <tr>
+                                        <td><strong>Estimated array area [m<sup>2</sup>]: </strong>{{feature.area|round(2) }}</td>
+                                    </tr>
                                 </thead>
                             </table>
                         </div>
@@ -104,6 +107,17 @@
                 <div class="row mt-5">
                     <div id='satellite-map-details' style='width: 350px; height: 350px; margin: auto;'></div>
                 </div>
+                <div class="row">
+                    <div class="table-responseive col-md">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <td><strong>New area [m<sup>2</sup>]: </strong><span id="calculated-area"></span></td>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>          
+                </div>
                 <div class="row mt-2">
                     <div class="col">
                         <div class="row ">
@@ -158,36 +172,32 @@
 
     <div hidden id="feature_data_div" data-lat="{{feature.lat}}" data-lng="{{feature.lng}}"></div>
     <div id="geo_data_div" data-geojson_data='{{ geojson_data|tojson }}'></div>
-    
-    <!-- CODE TO ADD DRAW FUNCTIONALITY -->
-    <style>
-        .calculation-box {
-        height: 75px;
-        width: 150px;
-        position: absolute;
-        bottom: 40px;
-        left: 10px;
-        background-color: rgba(255, 255, 255, 0.9);
-        padding: 15px;
-        text-align: center;
-        }
-         
-        p {
-        font-family: 'Open Sans';
-        margin: 0;
-        font-size: 13px;
-        }
-        </style>
-         
-        <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-        <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.js'></script>
-        <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.css' type='text/css' />
-        <div id="satellite-map-details"></div>
-        <div class="calculation-box">
-        <p>Click the map to draw a polygon.</p>
-        <div id="calculated-area"></div>
-        </div>
-        <!-- CODE TO ADD DRAW FUNCTIONALITY -->
 
-        <script src="{{url_for('static', filename='js/details.js')}}"></script>
+    <!-- CODE TO ADD DRAW FUNCTIONALITY -->
+    <!-- <style>
+        .calculation-box {
+            height: 75px;
+            width: 150px;
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            text-align: center;
+        }
+
+        p {
+            font-family: 'Open Sans';
+            margin: 0;
+            font-size: 13px;
+        }
+    </style> -->
+
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.css'
+        type='text/css' />
+    <!-- CODE TO ADD DRAW FUNCTIONALITY -->
+
+    <script src="{{url_for('static', filename='js/details.js')}}"></script>
     {%endblock%}
