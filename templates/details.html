@@ -6,7 +6,7 @@
 {%block body%}
 <h1 style="text-align: center">Power Output Estimation</h1>
 <div class="container mt-2">
-    <form action="#" method="POST">
+    <form action="/power" method="POST">
         <div class="row">
             <div class="col mr-3">
                 <div class="row">
@@ -24,7 +24,7 @@
                                         <td><strong>Coordinates: </strong> ({{feature.lat}}, {{feature.lng}})</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Estimated array area [m<sup>2</sup>]: </strong>{{feature.area|round(2) }}</td>
+                                        <td><strong>Estimated array area [m<sup>2</sup>]: </strong><input name="area" type = "number" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default"value="{{feature.area|round(2) }}"></td>
                                     </tr>
                                 </thead>
                             </table>
@@ -37,21 +37,13 @@
                             <h3 style="text-align: center">System info</h3>
                         </div>
                         <div class="row">
-                            <div class="input-group mb-3">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="inputGroup-sizing-default">DC System Size
-                                        (kW)</span>
-                                </div>
-                                <input type="number" class="form-control" aria-label="Default"
-                                    aria-describedby="inputGroup-sizing-default">
-                            </div>
                         </div>
                         <div class="row">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
                                     <label class="input-group-text" for="inputGroupSelect01">Module type</label>
                                 </div>
-                                <select class="custom-select" id="inputGroupSelect01">
+                                <select name = "module_type" class="custom-select" id="inputGroupSelect01">
                                     <option selected value="0">Standard</option>
                                     <option value="1">Premiuim</option>
                                     <option value="2">Thin film</option>
@@ -63,7 +55,7 @@
                                 <div class="input-group-prepend">
                                     <label class="input-group-text" for="inputGroupSelect01">Array type</label>
                                 </div>
-                                <select class="custom-select" id="inputGroupSelect01">
+                                <select name = "array_type" class="custom-select" id="inputGroupSelect01">
                                     <option value="0">Fixed (open rack)</option>
                                     <option selected value="1">Fixed (roof mount)</option>
                                     <option value="2">1-axis tracking</option>
@@ -78,7 +70,7 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">System Losses
                                         (%)</span>
                                 </div>
-                                <input type="number" value="14.48" class="form-control" aria-label="Default"
+                                <input name = "system_loss" type="number" value="14.48" class="form-control" aria-label="Default"
                                     aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
@@ -87,7 +79,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="inputGroup-sizing-default">Tilt (deg)</span>
                                 </div>
-                                <input type="number" value="20" class="form-control" aria-label="Default"
+                                <input name="tilt" type="number" value="20" class="form-control" aria-label="Default"
                                     aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
@@ -96,7 +88,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="inputGroup-sizing-default">Azimuth (deg)</span>
                                 </div>
-                                <input type="number" value="180" class="form-control" aria-label="Default"
+                                <input name = "azimuth" type="number" value="180" class="form-control" aria-label="Default"
                                     aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
@@ -129,7 +121,7 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">DC to AC Size
                                         Ratio</span>
                                 </div>
-                                <input type="number" value="1.2" class="form-control" aria-label="Default"
+                                <input name = "dc_ac_ratio" type="number" value="1.2" class="form-control" aria-label="Default"
                                     aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
@@ -139,7 +131,7 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">Inverter Efficiency
                                         (%)</span>
                                 </div>
-                                <input type="number" value="96" class="form-control" aria-label="Default"
+                                <input name="inverter_eff" type="number" value="96" class="form-control" aria-label="Default"
                                     aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
@@ -149,7 +141,7 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">Ground Coverage
                                         Ratio</span>
                                 </div>
-                                <input type="number" value="0.4" class="form-control" aria-label="Default"
+                                <input name = "ground_coverage" type="number" value="0.4" class="form-control" aria-label="Default"
                                     aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
@@ -162,6 +154,8 @@
                 <button class="btn btn-primary btn-lrg mb-1" type="submit">Estimate power</button>
                 <div id="calculated-area"></div>
             </div>
+        <input hidden name="lat" type="number" value="{{feature.lat}}">
+        <input hidden name="lng" type="number" value="{{feature.lng}}">
     </form>
 
 
@@ -173,25 +167,6 @@
     <div hidden id="feature_data_div" data-lat="{{feature.lat}}" data-lng="{{feature.lng}}"></div>
     <div id="geo_data_div" data-geojson_data='{{ geojson_data|tojson }}'></div>
 
-    <!-- CODE TO ADD DRAW FUNCTIONALITY -->
-    <!-- <style>
-        .calculation-box {
-            height: 75px;
-            width: 150px;
-            position: absolute;
-            bottom: 40px;
-            left: 10px;
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 15px;
-            text-align: center;
-        }
-
-        p {
-            font-family: 'Open Sans';
-            margin: 0;
-            font-size: 13px;
-        }
-    </style> -->
 
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.3.0/mapbox-gl-draw.js'></script>

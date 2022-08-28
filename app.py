@@ -6,6 +6,7 @@ from fileinput import filename
 from glob import glob
 import json
 import os
+import re
 import shutil
 from this import d
 from urllib import response
@@ -359,6 +360,30 @@ def details(id):
         return "feature not found"
     return render_template("details.html",feature = feature,geojson_data = geojson_data)
 
+@app.route("/power",methods=["GET","POST"])
+def power():
+    api_key = "YYhHCjfb0KfwJPwQWmDvDLoN4l2hqhWb5l6t9Bpr"
+    lat = str(request.form["lat"])
+    lng = str(request.form["lng"])
+    area = str(request.form["area"])
+    module_type = str(request.form["module_type"])
+    array_type = str(request.form["array_type"])
+    losses = str(request.form["system_loss"])
+    tilt = str(request.form["tilt"])
+    azimuth = str(request.form["azimuth"])
+    dc_ac_ratio = str(request.form["dc_ac_ratio"])
+    inv_eff = str(request.form["inverter_eff"])
+    gcr = str(request.form["ground_coverage"])
+    system_capacity = str(4)
+    url = "https://developer.nrel.gov/api/pvwatts/v6.json?api_key="+api_key+"&lat="+lat+"&lon="+lng+"&system_capacity="+system_capacity+"&module_type="+module_type+"&losses="+losses+"&array_type="+array_type+"&tilt="+tilt+"&azimuth="+azimuth+"&dc_ac_ratio="+dc_ac_ratio+"&gcr="+gcr+"&inv_eff="+inv_eff
+    try:
+        response = requests.get(url)
+        response_json = response.json()
+        print(response_json)
+    except:
+        return "failed to get request"
+
+    return render_template("estimate.html",response=response_json),200
 
 @app.route("/running",methods=['POST','GET'])
 def running():
