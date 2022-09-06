@@ -40,14 +40,18 @@ const draw = new MapboxDraw({
     function updateArea(e) {
     const data = draw.getAll();
     const answer = document.getElementById('calculated-area');
+    const capacity = document.getElementById('estimated-capacity')
     if (data.features.length > 0) {
     const area = turf.area(data);
     // Restrict the area to 2 decimal points.
     const rounded_area = Math.round(area * 100) / 100;
+    const estimated_capacity = Math.round(area*196.875)/1000.0;
     //answer.innerHTML = `${rounded_area}`;
     answer.value = `${rounded_area}`;
+    capacity.value = `${estimated_capacity}`;
     } else {
     answer.innerHTML = '';
+    power.innerHTML = '';
     if (e.type !== 'draw.delete')
     alert('Click the map to draw a polygon.');
     }

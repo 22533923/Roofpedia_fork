@@ -349,11 +349,13 @@ def delete(id):
 @app.route("/details/<int:id>",methods = ["GET","POST"])
 def details(id):
     geojson_data = session['geojson_data']
+    power = 0
     try:
         feature = Feature.query.get(id)
+        power = areaToPower(feature.area)
     except:
         return "feature not found"
-    return render_template("details.html",feature = feature,geojson_data = geojson_data)
+    return render_template("details.html",feature = feature,geojson_data = geojson_data,power = power)
 
 @app.route("/power",methods=["GET","POST"])
 def power():

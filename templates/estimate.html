@@ -5,6 +5,22 @@
 {%endblock%}
 
 {%block body%} 
-<h1>estimate page</h1>
-    {{response["outputs"]["ac_annual"]}}
+<h1 style="text-align: center">Results</h1>
+
+<div class="container">
+    <div class="row">
+      <div class="col">
+        <div class="table-responseive col-md">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <td><strong>Estimated annual AC output [kWH/year]: </strong><input readonly name = "yearly_power" type = "number "
+                        class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default" value="{{response['outputs']['ac_annual']|round(2)}}"></td>
+                    </tr>
+                </thead>
+            </table>
+        </div>    
+      </div>
+    </div>
+  </div>
 {%endblock%}
