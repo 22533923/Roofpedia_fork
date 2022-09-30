@@ -98,6 +98,7 @@ def query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge):
     lngEastEdge = str(lngEastEdge)
     QUERY = '[out:json] [timeout:25];(node["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');way["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');relation["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+'););(._;>;);out body;'
     api = overpass.API()
+    print("OVERPASS QUERY:\n",QUERY)
     res = api.get(QUERY,build=False)
     res_geojson = osm2geojson.json2geojson(res, filter_used_refs=False, log_level='INFO')
     completePath = os.path.join(absolute_path, 'results/01City/')
