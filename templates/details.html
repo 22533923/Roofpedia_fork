@@ -14,7 +14,7 @@
                         <h3 style="text-align: center">Solar Roof Location</h3>
                     </div>
                     <div class="row">
-                        <div class="table-responseive col-md">
+                        <div class="table-responsive col-md">
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
@@ -24,16 +24,55 @@
                                         <td><strong>Coordinates: </strong> ({{feature.lat}}, {{feature.lng}})</td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Estimated array area [m<sup>2</sup>]: </strong><input readonly name="area" type = "number" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default"value="{{feature.area|round(2) }}"></td>
+                                        <td><strong>Estimated array area [m<sup>2</sup>]: </strong><input readonly
+                                                name="area" type="number" class="form-control"
+                                                aria-label="Sizing example input"
+                                                aria-describedby="inputGroup-sizing-default"
+                                                value="{{feature.area|round(2) }}"></td>
                                     </tr>
                                     <tr>
-                                        <td><strong>Estimated DC system size [kW]: </strong><input readonly name="power-estimate" type = "number" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default"value="{{power|round(2) }}"></td>
+                                        <td><strong>Estimated DC system size [kW]: </strong><input readonly
+                                                name="power-estimate" type="number" class="form-control"
+                                                aria-label="Sizing example input"
+                                                aria-describedby="inputGroup-sizing-default"
+                                                value="{{power|round(2) }}"></td>
                                     </tr>
                                 </thead>
                             </table>
                         </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="table-responsive col-md">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <td><strong>New area [m<sup>2</sup>]: </strong><input readonly name="new_area"
+                                            type="number" id="calculated-area" class="form-control"
+                                            aria-label="Default" aria-describedby="inputGroup-sizing-default"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Re-estimated DC system size [kW]: </strong><input readonly
+                                            name="new_capacity" id="estimated-capacity" type="number"
+                                            class="form-control" aria-label="Sizing example input"
+                                            aria-describedby="inputGroup-sizing-default"
+                                            value="{{feature.area|round(2) }}"></td>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col">
+                <div class="row mt-5">
+                    <div id='satellite-map-details' style='width: 450px; height: 450px; margin: auto;'></div>
+                </div>
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
                 <div class="row">
                     <div class="col">
                         <div class="row">
@@ -44,7 +83,7 @@
                                 <div class="input-group-prepend">
                                     <label class="input-group-text" for="inputGroupSelect01">Module type</label>
                                 </div>
-                                <select name = "module_type" class="custom-select" id="inputGroupSelect01">
+                                <select name="module_type" class="custom-select" id="inputGroupSelect01">
                                     <option selected value="0">Standard</option>
                                     <option value="1">Premiuim</option>
                                     <option value="2">Thin film</option>
@@ -56,7 +95,7 @@
                                 <div class="input-group-prepend">
                                     <label class="input-group-text" for="inputGroupSelect01">Array type</label>
                                 </div>
-                                <select name = "array_type" class="custom-select" id="inputGroupSelect01">
+                                <select name="array_type" class="custom-select" id="inputGroupSelect01">
                                     <option value="0">Fixed (open rack)</option>
                                     <option selected value="1">Fixed (roof mount)</option>
                                     <option value="2">1-axis tracking</option>
@@ -71,8 +110,8 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">System Losses
                                         (%)</span>
                                 </div>
-                                <input name = "system_loss" type="number" value="14.48" class="form-control" aria-label="Default"
-                                    aria-describedby="inputGroup-sizing-default">
+                                <input name="system_loss" type="number" value="14.48" class="form-control"
+                                    aria-label="Default" aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
                         <div class="row">
@@ -89,31 +128,11 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="inputGroup-sizing-default">Azimuth (deg)</span>
                                 </div>
-                                <input name = "azimuth" type="number" value="180" class="form-control" aria-label="Default"
-                                    aria-describedby="inputGroup-sizing-default">
+                                <input name="azimuth" type="number" value="180" class="form-control"
+                                    aria-label="Default" aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="col">
-                <div class="row mt-5">
-                    <div id='satellite-map-details' style='width: 350px; height: 350px; margin: auto;'></div>
-                </div>
-                <div class="row">
-                    <div class="table-responseive col-md">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <td><strong>New area [m<sup>2</sup>]: </strong><input readonly name = "new_area" type = "number " id="calculated-area"
-                                    class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default"></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Re-estimated DC system size [kW]: </strong><input readonly name="new_capacity" id="estimated-capacity" type = "number" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default"value="{{feature.area|round(2) }}"></td>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>          
                 </div>
                 <div class="row mt-2">
                     <div class="col">
@@ -126,8 +145,8 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">DC to AC Size
                                         Ratio</span>
                                 </div>
-                                <input name = "dc_ac_ratio" type="number" value="1.2" class="form-control" aria-label="Default"
-                                    aria-describedby="inputGroup-sizing-default">
+                                <input name="dc_ac_ratio" type="number" value="1.2" class="form-control"
+                                    aria-label="Default" aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
                         <div class="row">
@@ -136,8 +155,8 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">Inverter Efficiency
                                         (%)</span>
                                 </div>
-                                <input name="inverter_eff" type="number" value="96" class="form-control" aria-label="Default"
-                                    aria-describedby="inputGroup-sizing-default">
+                                <input name="inverter_eff" type="number" value="96" class="form-control"
+                                    aria-label="Default" aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
                         <div class="row">
@@ -146,8 +165,8 @@
                                     <span class="input-group-text" id="inputGroup-sizing-default">Ground Coverage
                                         Ratio</span>
                                 </div>
-                                <input name = "ground_coverage" type="number" value="0.4" class="form-control" aria-label="Default"
-                                    aria-describedby="inputGroup-sizing-default">
+                                <input name="ground_coverage" type="number" value="0.4" class="form-control"
+                                    aria-label="Default" aria-describedby="inputGroup-sizing-default">
                             </div>
                         </div>
                     </div>
@@ -159,8 +178,9 @@
                 <button class="btn btn-primary btn-lrg mb-1" type="submit">Estimate power</button>
                 <div id="calculated-area"></div>
             </div>
-        <input hidden name="lat" type="number" value="{{feature.lat}}">
-        <input hidden name="lng" type="number" value="{{feature.lng}}">
+        </div>
+            <input hidden name="lat" type="number" value="{{feature.lat}}">
+            <input hidden name="lng" type="number" value="{{feature.lng}}">
     </form>
 
 

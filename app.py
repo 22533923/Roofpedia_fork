@@ -1,16 +1,16 @@
-from ast import Return
-from asyncio import current_task
-from audioop import add
-from crypt import methods
-from fileinput import filename
-from glob import glob
+#from ast import Return
+#from asyncio import current_task
+#from audioop import add
+#from crypt import methods
+#from fileinput import filename
+#from glob import glob
+#import re
+#from xml.etree.ElementTree import tostring
+#from urllib import response
+#from this import d
 import json
 import os
-import re
 import shutil
-from this import d
-from urllib import response
-from xml.etree.ElementTree import tostring
 import torch
 import toml
 import threading
@@ -75,7 +75,6 @@ running = False
 absolute_path = os.path.dirname(__file__)
 model_thread_name = ""
 extent = ""
-#mapbox_access_token = 'pk.eyJ1IjoibHVrYXN2ZG0iLCJhIjoiY2w2YnVlbXg0MWg3bTNpbzFnYmxubzd6NSJ9.RZBMIv2Wi-PsKYcHCI0suA'
 #methods
 
 def run_model(extent):
@@ -414,8 +413,6 @@ def track():
     if complete: # model has finished running, set complete False
         complete = False
         extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
-        #return jsonify({'redirect': url_for('finished'),'extent': extent})
-        #return jsonify({'redirect': url_for('temp')})
         return redirect(url_for('temp'))
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
