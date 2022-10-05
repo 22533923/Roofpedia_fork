@@ -9,6 +9,7 @@
 #from urllib import response
 #from this import d
 import json
+from operator import le
 import os
 from pyexpat import features
 import shutil
@@ -387,10 +388,35 @@ def finished():
     #args = request.args
     #extent = args["extent"]
     # extent = "MAP" #REMVOVE WHEN DONE TESTING
-    #features = session['features']
     features = Feature.query.all()
     geojson_data = session['geojson_data']
-    return render_template("finished.html",features = features,geojson_data = geojson_data)
+    area = 0
+    total_power=0
+    for i in range(len(features)):
+        area = area + features[i].area
+
+    if not len(features) == 0:
+        api_key = "YYhHCjfb0KfwJPwQWmDvDLoN4l2hqhWb5l6t9Bpr"
+        lng = str(features[0].lng)
+        lat = str(features[0].lat)
+        area = str(area)
+        module_type = str(0)
+        array_type = str(1)
+        losses = str(14.48)
+        tilt = str(20)
+        azimuth = str(180)
+        dc_ac_ratio = str(1.2)
+        inv_eff = str(96)
+        gcr = str(0.4)
+        system_capacity = str(areaToPower(area)/1000.0)
+        url = "https://developer.nrel.gov/api/pvwatts/v6.json?api_key="+api_key+"&lat="+lat+"&lon="+lng+"&system_capacity="+system_capacity+"&module_type="+module_type+"&losses="+losses+"&array_type="+array_type+"&tilt="+tilt+"&azimuth="+azimuth+"&dc_ac_ratio="+dc_ac_ratio+"&gcr="+gcr+"&inv_eff="+inv_eff
+        try:
+            response_json = requests.get(url).json()
+            total_power = response_json['outputs']['ac_annual']
+        except:
+            return "failed to get request"
+
+    return render_template("finished.html",features = features,geojson_data = geojson_data,total_power = total_power)
     #return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
 
 
@@ -446,7 +472,6 @@ def power():
         system_capacity = str(areaToPower(new_area)/1000.0)
     else:
         system_capacity = str(areaToPower(area)/1000.0)
-    print(system_capacity)
     url = "https://developer.nrel.gov/api/pvwatts/v6.json?api_key="+api_key+"&lat="+lat+"&lon="+lng+"&system_capacity="+system_capacity+"&module_type="+module_type+"&losses="+losses+"&array_type="+array_type+"&tilt="+tilt+"&azimuth="+azimuth+"&dc_ac_ratio="+dc_ac_ratio+"&gcr="+gcr+"&inv_eff="+inv_eff
     try:
         response = requests.get(url)
