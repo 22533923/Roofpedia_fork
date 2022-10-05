@@ -10,6 +10,7 @@
 #from this import d
 import json
 import os
+from pyexpat import features
 import shutil
 import torch
 import toml
@@ -161,7 +162,7 @@ def startEndTilesXY(nw_coords,se_coords):
 
 def getResultsFile(extent):#fetch results stored in Results04 geojson
     extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
-    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    #coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
     path = os.path.abspath("results/04Results/"+extent+"_Solar.geojson")
     f = open(path,"r")
     geojson_data = json.load(f)
@@ -181,6 +182,35 @@ def filterForFeature(geojson_data,id):
             filtered_feat.append(feature)
     geojson_data["features"] = filtered_feat
     return geojson_data
+
+def filterGeoJSON(geojson_data,extent,type,coords_to_delete):
+    """
+    -filter out the rooftop to be deleted from results geojson
+    """
+    #get coords of all features in results geojson
+    coords = []
+    gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+extent+'_'+type+'.geojson'))#path to results
+    gdf['centroid'] = gdf.centroid
+    for i in range(gdf.shape[0]):
+        (lon,lat) = (gdf.centroid[i].coords[0])
+        coordsList = [lon,lat]
+        coords.append(coordsList)
+
+    features_dict = { i : geojson_data["features"][i] for i in range(0, len(geojson_data["features"]) ) }
+    filtered_feat = []
+    i=0
+    for key in features_dict:
+        feature = features_dict[key]
+        if not float(gdf.centroid[i].coords[0][0]) == float(coords_to_delete[0][0]):
+            filtered_feat.append(feature)
+        i=i+1
+    geojson_data["features"] = filtered_feat
+
+    #update geojson file in 04Results with filtered features
+    completePath = os.path.join(absolute_path, 'results/04Results/')
+    filename = extent + '_Solar.geojson'
+    with open(completePath+filename, 'w') as f:
+        dump(geojson_data, f)
 
 def filterFeatures(geojson_data, coords, addresses,extent):
     """
@@ -295,7 +325,7 @@ def getTiles():
 
 
 
-@app.route("/validateSelection",methods=['POST','GET'])
+@app.route("/rooftop-polygons",methods=['POST','GET'])
 def check():
     #TODO: check that co-ordinates have valid zoom level
     #TODO: change from request.form to json data -> complete?
@@ -306,6 +336,35 @@ def check():
     lngEastEdge = request_data['east_edge_lng']
     query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge);
     return {},200
+
+@app.route("/running",methods=['POST','GET'])
+def running():
+    #global running, model_thread_name, extent
+    global extent
+    extent = request.form['extent'] #TODO: remove this & fix in front end
+    if not model_thread_name:
+        #string empty
+        model_thread = threading.Thread(target=run_model,args=(extent,)).start()
+        #running = True
+    return render_template("running.html")
+
+@app.route("/track", methods=["GET"])
+def track():
+    """
+    called every 10s to check if model has finished running. Once model is finished: 
+    -results saved in geojson in 04Results
+    -representation of each feature in results geojson stored in DB. All features will
+    be of type polygon. In the db, each feature represented
+    by a unique id, the coordinates of the centroid, address of the centroid and
+    the polygon area.
+    -once db is populated, redirects to finished.html
+    """
+    global complete
+    if complete: # model has finished running, set complete False
+        complete = False
+        extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
+        return redirect(url_for('temp'))
+    return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 @app.route("/temp")
 def temp():
@@ -328,7 +387,8 @@ def finished():
     #args = request.args
     #extent = args["extent"]
     # extent = "MAP" #REMVOVE WHEN DONE TESTING
-    features = session['features']
+    #features = session['features']
+    features = Feature.query.all()
     geojson_data = session['geojson_data']
     return render_template("finished.html",features = features,geojson_data = geojson_data)
     #return render_template("finished.html",coords = coords,addresses = addresses,geojson_data = geojson_data)
@@ -337,12 +397,22 @@ def finished():
 @app.route("/delete/<int:id>",methods = ["GET","POST"])
 def delete(id):
     feature_to_delete = Feature.query.get_or_404(id)
+    lng_to_delete = feature_to_delete.lng
+    lat_to_delete = feature_to_delete.lat
+    coords_to_delete = [(lng_to_delete,lat_to_delete)]
+    print("COORDS TO DELETE: ",coords_to_delete)
     try:
         db.session.delete(feature_to_delete)
         db.session.commit()
-        features = Feature.query.all()
+        #features = Feature.query.all()
         geojson_data = session["geojson_data"]
-        return render_template("finished.html",features = features,geojson_data = geojson_data)
+        extent = "MAP"#TODO: change this when done 
+        type = "Solar"
+        print("START FILTERING GEOJSON")
+        filterGeoJSON(geojson_data,extent,type,coords_to_delete)
+        print("SUCCESSFUL!")
+        return redirect(url_for('finished'))
+        #return render_template("finished.html",features = features,geojson_data = geojson_data)
     except:
         return 'failed'
 
@@ -385,36 +455,6 @@ def power():
         return "failed to get request"
 
     return render_template("estimate.html",response=response_json),200
-
-@app.route("/running",methods=['POST','GET'])
-def running():
-    #global running, model_thread_name, extent
-    global extent
-    extent = request.form['extent']
-    if not model_thread_name:
-        #string empty
-        model_thread = threading.Thread(target=run_model,args=(extent,)).start()
-        #running = True
-    return render_template("running.html")
-
-
-@app.route("/track", methods=["GET"])
-def track():
-    """
-    called every 10s to check if model has finished running. Once model is finished: 
-    -results saved in geojson in 04Results
-    -representation of each feature in results geojson stored in DB. All features will
-    be of type polygon. In the db, each feature represented
-    by a unique id, the coordinates of the centroid, address of the centroid and
-    the polygon area.
-    -once db is populated, redirects to finished.html
-    """
-    global complete
-    if complete: # model has finished running, set complete False
-        complete = False
-        extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
-        return redirect(url_for('temp'))
-    return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 
 if __name__ == "__main__":

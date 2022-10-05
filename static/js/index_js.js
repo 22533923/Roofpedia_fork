@@ -31,7 +31,7 @@ function postMapBounds() {
     coords = getMapBounds()
     $.ajax({
         type: "POST",
-        url: "/validateSelection",
+        url: "/rooftop-polygons",
         data: JSON.stringify(coords),
         dataType: "json",
         contentType: "application/json",
