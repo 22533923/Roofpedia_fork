@@ -36,7 +36,7 @@ from io import BytesIO
 class Predict_and_extract:
     #Code to run Roofpedia model on sample data
 
-    def pred_and_ext(self,extent):
+    def pred_and_ext(self):
 
         config = toml.load('config/predict-config.toml')
 
@@ -71,21 +71,20 @@ global complete
 global running
 global absolute_path
 global model_thread_name
-global extent
+extent = "MAP"
 complete = False
 running = False
 absolute_path = os.path.dirname(__file__)
 model_thread_name = ""
-extent = ""
 #methods
 
-def run_model(extent):
+def run_model():
     #start a thread to run the model as a background task
     global complete,model_thread_name
     model_thread_name = threading.current_thread().name
     print("Starting thread: ",model_thread_name)
     new_class = Predict_and_extract()
-    new_class.pred_and_ext(extent)
+    new_class.pred_and_ext()
     complete = True
     model_thread_name = ""
 
@@ -107,7 +106,7 @@ def query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge):
         dump(res_geojson, f)
 
 
-def extract_features(extent,type):
+def extract_features(type):
     #extract rooftop features identified by Roofpedia model
     #global absolute_path
     geolocator = Nominatim(user_agent="my_app")
@@ -123,7 +122,7 @@ def extract_features(extent,type):
         addresses.append(geolocator.reverse(c_string))
     return coords, addresses
 
-def extractPolygonAreas(extent,type):
+def extractPolygonAreas(type):
     gdf = gpd.read_file(os.path.join(absolute_path,'results/04Results/'+extent+'_'+type+'.geojson'))#path to results
     tost = gdf.copy()
     tost= tost.to_crs({'init': 'epsg:3857'})#change from projection with unit of degree to cartesian projection with unit m 
@@ -161,8 +160,8 @@ def startEndTilesXY(nw_coords,se_coords):
     }
     return start_tile_xy, end_tile_xy
 
-def getResultsFile(extent):#fetch results stored in Results04 geojson
-    extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
+def getResultsFile():#fetch results stored in Results04 geojson
+    extractPolygonAreas("Solar")#convert areas in geojson in Result04 to square meters
     #coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
     path = os.path.abspath("results/04Results/"+extent+"_Solar.geojson")
     f = open(path,"r")
@@ -213,7 +212,7 @@ def filterGeoJSON(geojson_data,extent,type,coords_to_delete):
     with open(completePath+filename, 'w') as f:
         dump(geojson_data, f)
 
-def filterFeatures(geojson_data, coords, addresses,extent):
+def filterFeatures(geojson_data, coords, addresses):
     """
     -filter out all features in geojson_data object that aren't polygons
     -update MAP_Solar.geojson file in 04Results with filtered features
@@ -236,7 +235,7 @@ def filterFeatures(geojson_data, coords, addresses,extent):
 
     #load features, coords and addresses to database
     features = geojson_data["features"]
-    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    coords,addresses = extract_features("Solar")#extract coords and addresses from geojson in 04Results
     db.drop_all()#not ideal, but prevents same features from being readded to db if finished.html gets refreshed. Also takes care of primary key issue
     db.create_all()#Features table is therefore cleared and repopulated every time finished.html refreshes
     for i in range(len(features)):
@@ -340,12 +339,9 @@ def check():
 
 @app.route("/running",methods=['POST','GET'])
 def running():
-    #global running, model_thread_name, extent
-    global extent
-    extent = request.form['extent'] #TODO: remove this & fix in front end
     if not model_thread_name:
         #string empty
-        model_thread = threading.Thread(target=run_model,args=(extent,)).start()
+        model_thread = threading.Thread(target=run_model).start()
         #running = True
     return render_template("running.html")
 
@@ -363,20 +359,16 @@ def track():
     global complete
     if complete: # model has finished running, set complete False
         complete = False
-        extractPolygonAreas(extent,"Solar")#convert areas in geojson in Result04 to square meters
+        extractPolygonAreas("Solar")#convert areas in geojson in Result04 to square meters
         return redirect(url_for('temp'))
     return jsonify({'redirect': "running"}), 200 # give the client SOMETHING so the request doesn't timeout and error
 
 @app.route("/temp")
 def temp():
-    global extent
-    #args = request.args
-    #extent = args["extent"]
-    extent = "MAP" #REMVOVE WHEN DONE TESTING
-    coords,addresses = extract_features(extent,"Solar")#extract coords and addresses from geojson in 04Results
+    coords,addresses = extract_features("Solar")#extract coords and addresses from geojson in 04Results
     #get geojson results file to pass to finished.html
-    geojson_data = getResultsFile(extent)
-    geojson_data = filterFeatures(geojson_data, coords, addresses,extent)
+    geojson_data = getResultsFile()
+    geojson_data = filterFeatures(geojson_data, coords, addresses)
     features = Feature.query.all()
     session['geojson_data'] = geojson_data
     session['features'] = features
@@ -384,10 +376,6 @@ def temp():
 
 @app.route("/finished",methods=['POST','GET'])
 def finished():
-    global extent
-    #args = request.args
-    #extent = args["extent"]
-    # extent = "MAP" #REMVOVE WHEN DONE TESTING
     features = Feature.query.all()
     geojson_data = session['geojson_data']
     area = 0
@@ -434,9 +422,7 @@ def delete(id):
         geojson_data = session["geojson_data"]
         extent = "MAP"#TODO: change this when done 
         type = "Solar"
-        print("START FILTERING GEOJSON")
         filterGeoJSON(geojson_data,extent,type,coords_to_delete)
-        print("SUCCESSFUL!")
         return redirect(url_for('finished'))
         #return render_template("finished.html",features = features,geojson_data = geojson_data)
     except:
@@ -445,13 +431,13 @@ def delete(id):
 @app.route("/details/<int:id>",methods = ["GET","POST"])
 def details(id):
     geojson_data = session['geojson_data']
-    power = 0
+    DC_syst_size = 0
     try:
         feature = Feature.query.get(id)
-        power = areaToPower(feature.area)
+        DC_syst_size = areaToPower(feature.area)
     except:
         return "feature not found"
-    return render_template("details.html",feature = feature,geojson_data = geojson_data,power = power)
+    return render_template("details.html",feature = feature,geojson_data = geojson_data,DC_syst_size = DC_syst_size)
 
 @app.route("/power",methods=["GET","POST"])
 def power():

@@ -32,10 +32,10 @@
                                     </tr>
                                     <tr>
                                         <td><strong>Estimated DC system size [kW]: </strong><input readonly
-                                                name="power-estimate" type="number" class="form-control"
+                                                name="DC_syst_size" type="number" class="form-control"
                                                 aria-label="Sizing example input"
                                                 aria-describedby="inputGroup-sizing-default"
-                                                value="{{power|round(2) }}"></td>
+                                                value="{{DC_syst_size|round(2) }}"></td>
                                     </tr>
                                 </thead>
                             </table>
@@ -175,7 +175,7 @@
         </div>
         <div class="row">
             <div class="col text-center">
-                <button class="btn btn-primary btn-lrg mb-1" type="submit">Estimate power</button>
+                <button class="btn btn-primary btn-lrg mb-1" type="submit">Estimate energy capacity</button>
                 <div id="calculated-area"></div>
             </div>
         </div>
