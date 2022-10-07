@@ -1,7 +1,7 @@
 {%extends 'base.html'%}
 
 {%block head%}
-<h1 style="text-align: center">My app</h1>
+<h1 style="text-align: center">Residential PV Solar Finder</h1>
 <style>
   /* Popup container - can be anything you want */
   .popup {
@@ -77,7 +77,6 @@
                       <tr>
                         <th scope="col">Address</th>
                         <th scope="col">Polygon area [m<sup>2</sup>]</th>
-                        <th scope="col">Estimated peak power [kW]</th>
                         <th scope="col">Action</th>
                       </tr>
                     </thead>
@@ -91,7 +90,6 @@
                         <td>
                             {{feature.area|round(2)}}
                         </td>
-                        <td scope="col">some number</td>
                         <td>
                             <button 
                             style="min-width: 70px;" 
