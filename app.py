@@ -90,15 +90,12 @@ def run_model():
 
 
 def query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge):
-    #TODO make name of geojson file dynamic. Currently hardcoded to "MAP"
-    #global absolute_path
     latSouthEdge = str(latSouthEdge)
     lngWestEdge = str(lngWestEdge)
     latNorthEdge = str(latNorthEdge)
     lngEastEdge = str(lngEastEdge)
     QUERY = '[out:json] [timeout:25];(node["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');way["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+');relation["building"]('+latSouthEdge+','+lngWestEdge+','+latNorthEdge+','+lngEastEdge+'););(._;>;);out body;'
     api = overpass.API()
-    print("OVERPASS QUERY:\n",QUERY)
     res = api.get(QUERY,build=False)
     res_geojson = osm2geojson.json2geojson(res, filter_used_refs=False, log_level='INFO')
     completePath = os.path.join(absolute_path, 'results/01City/')
@@ -335,6 +332,7 @@ def check():
     latNorthEdge = request_data['north_edge_lat']
     lngEastEdge = request_data['east_edge_lng']
     query_rooftop_polygons(latSouthEdge,lngWestEdge,latNorthEdge,lngEastEdge);
+    print("QUERY DONE")
     return {},200
 
 @app.route("/running",methods=['POST','GET'])
@@ -414,7 +412,6 @@ def delete(id):
     lng_to_delete = feature_to_delete.lng
     lat_to_delete = feature_to_delete.lat
     coords_to_delete = [(lng_to_delete,lat_to_delete)]
-    print("COORDS TO DELETE: ",coords_to_delete)
     try:
         db.session.delete(feature_to_delete)
         db.session.commit()
@@ -439,7 +436,7 @@ def details(id):
         return "feature not found"
     return render_template("details.html",feature = feature,geojson_data = geojson_data,DC_syst_size = DC_syst_size)
 
-@app.route("/power",methods=["GET","POST"])
+@app.route("/energy",methods=["GET","POST"])
 def power():
     api_key = "YYhHCjfb0KfwJPwQWmDvDLoN4l2hqhWb5l6t9Bpr"
     lat = str(request.form["lat"])

@@ -10,17 +10,20 @@
     <div id='map' style='width: 600px; height: 400px; margin: 25px auto;'></div>
 </main>
 
-<form action="/running" method="POST" name="runModel-form">
-    <div class="container">
-        <div class="form-row justify-content-center">
-                <button style="min-width: 220px;" class="btn btn-primary btn-lg mr-2" id=valSelBut>Extract polygons</button>
-                <button style="min-width: 220px;"  class="btn btn-primary btn-lg ml-2" id=rasterBut>Download raster tiles</button>
-        </div>
-        <div class="form-row justify-content-center">
-            <button type="submit" class="btn btn-primary btn-lg mt-2">Run model</button>
-        </div>
+
+<div class="container">
+    <div class="form-row justify-content-center">
+        <button style="min-width: 220px;" class="btn btn-primary btn-lg mr-2" id=valSelBut>Extract polygons</button>
+        <button style="min-width: 220px;" class="btn btn-primary btn-lg ml-2" id=rasterBut>Download raster
+            tiles</button>
     </div>
-</form>
+    <div class="form-row justify-content-center">
+        <form action="/running" method="POST" name="runModel-form">
+        <button type="submit" class="btn btn-primary btn-lg mt-2">Run model</button>
+        </form>
+    </div>
+</div>
+
 
 
 </div>
