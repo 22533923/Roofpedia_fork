@@ -53,7 +53,7 @@ map.on('load', () => {
     'layout': {},
     'paint': {
     'fill-color': '#0080ff', // blue color fill
-    'fill-opacity': 0.4
+    'fill-opacity': 0.15
     }
     });
     // Add a black outline around the polygon.
