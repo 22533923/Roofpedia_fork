@@ -36,7 +36,11 @@ function postMapBounds() {
         dataType: "json",
         contentType: "application/json",
         success: function(response){
+            alert("Success - rooftop polygons extracted!")
             console.log("Success - roof polygons geojson")
+        },
+        error: function(response){
+            alert("Failure - Overpass query timed out! Please try again.")
         }
    });
   }
@@ -50,6 +54,7 @@ function postMapBounds() {
         dataType: "json",
         contentType: "application/json",
         success: function(response){
+            alert("Success - satellite raster tiles downloaded!")
             console.log("Success - Raster tiles")
         }
    });
